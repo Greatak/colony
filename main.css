@@ -1,0 +1,359 @@
+html {
+    height: 100%;
+}
+body {
+    background: url('planet.jpg') 0 0/cover no-repeat #000;
+    background-attachment: fixed;
+    font-family: "Ubuntu", sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    height: 100%;
+    margin: 0;
+}
+h2 {
+    background: #344F69;
+    color: #fff;
+    font-weight: 400;
+    margin: 0;
+    padding: 0.25em 0.5em;
+}
+h3 {
+    margin: 0;
+    pointer-events: none;
+}
+ul {
+    list-style: none;
+    padding: 0;
+}
+.hide {
+    display: none !important;
+}
+
+.main-container {
+    height: 100%;
+    position: relative;
+}
+
+.left {
+    box-sizing: border-box;
+    height: 100%;
+    left: 0;
+    padding: 0.25em;
+    position: absolute;
+    top: 0;
+    width: 30vw;
+}
+.middle {
+    box-sizing: border-box;
+    height: 100%;
+    left: 30vw;
+    padding: 0.25em;
+    position: absolute;
+    top: 0;
+    width: 40vw;
+}
+.right {
+    box-sizing: border-box;
+    height: 100%;
+    left: 70vw;
+    padding: 0.25em;
+    position: absolute;
+    top: 0;
+    width: 30vw;
+}
+.unaffordable {
+    opacity: .5;
+    pointer-events: none;
+}
+.glass {
+    position: relative;
+}
+.glass::before {
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  display: block;
+  position: absolute;
+  content: ' ';
+  background-image: url('planet-blur.jpg');
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.resources{
+    height: calc(50% - 1em);
+    margin-bottom: 1em;
+}
+.resource-list-box {
+    height: calc(100% - 2.5em);
+    overflow: auto;
+}
+.resource-list {
+    text-align: center;
+}
+.primary .resource {
+    background: rgba(255,255,255,0.3);
+    display: inline-block;
+    height: 5em;
+    position: relative;
+    width: 5em;
+}
+.primary .resource h3 {
+    left: -25%;
+    position: absolute;
+    text-align: center;
+    width: 150%;
+}
+.primary .resource p {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    text-align: center;
+    width: 100%;
+}
+.secondary {
+    border-top: solid 1px #fff;
+    margin-top: 0;
+    padding-top: 1.5em;
+    position: relative;
+}
+.secondary::before {
+    color: #fff;
+    content: 'Secondary';
+    left: 0.5em;
+    padding: 0.25em 0;
+    position: absolute;
+    top: 0;
+}
+.secondary .resource {
+    background: rgba(58,156,231,0.6);
+    color: #fff;
+    display: block;
+    margin: 0.25em 0.5em;
+    text-align: left;
+}
+.secondary .resource h3 {
+    display: inline-block;
+    font-size: 1em;
+    font-weight: 400;
+    margin: 0;
+    padding: 0.25em 0.25em;
+}
+.secondary .resource p {
+    border-right: solid 1px rgba(255,255,255,0.7);
+    display: inline-block;
+    float: left;
+    margin: 0;
+    padding: 0.25em 0.25em;
+    text-align: center;
+    width: 2.5em;
+}
+
+.log {
+    height: 50%;
+}
+.log-list {
+    height: calc(100% - 2.5em);
+    overflow: auto;
+    margin: 0;
+}
+.log li {
+    background: rgba(255,255,255,1);
+    padding: 0.25em 0.5em;
+    transition: background 0.3s;
+}
+.log .bad {
+    background: rgba(153,9,34,0.8);
+}
+.log .good {
+    background: rgba(158,198,101,0.8);
+}
+.log .warn {
+    background: rgba(250,169,0,0.8);
+}
+.log .normal {
+    background: rgba(255,255,255,0);
+}
+
+.status {
+    color: #fff;
+    height: 50%;
+}
+.top-bar {
+    font-size: 1.5em;
+    padding: 0.25em 0.5em;
+}
+.date {
+}
+
+.build {
+    height: 100%;
+}
+.build-list {
+    height: calc(100% - 2.5em);
+    overflow: auto;
+    margin: 0;
+}
+
+.building {
+    background: rgba(58,156,231,0.6);
+    color: #fff;
+    height: 8em;
+    margin: 0.25em 0.5em;
+}
+.building h3 {
+    border-bottom: solid 1px #ccc;
+    display: inline-block;
+    width: calc(100% - 8em);
+}
+.building>p {
+    float: right;
+    margin: 0.25em;
+    width: 40%;
+}
+
+.building .icon {
+    background: url('sprite.png');
+    float: left;
+    font-weight: 700;
+    height: 8em;
+    position: relative;
+    width: 8em;
+}
+.building .buy-button {
+    background: #344F69;
+    bottom: 0;
+    height: 2em;
+    position: absolute;
+    right: 0;
+    width: 2em;
+}
+.building .buy-button::before {
+    bottom: 0.5em;
+    content: '+';
+    position: absolute;
+    text-align: center;
+    width: 2em;
+}
+.building .sell-button {
+    background: #344F69;
+    bottom: 0;
+    height: 2em;
+    left: 0;
+    position: absolute;
+    width: 2em;
+}
+.building .sell-button::before {
+    bottom: 0.5em;
+    content: '-';
+    position: absolute;
+    text-align: center;
+    width: 2em;
+}
+.building .icon>p {
+    bottom: 0;
+    left: 0;
+    margin: 0.5em 0;
+    position: absolute;
+    text-align: center;
+    transform: translateY(0px) scale(1);
+    transition: transform 0.1s;
+    width: 100%;
+}
+.building p.bounce {
+    transform: translateY(-10px) scale(2);
+}
+.building p.fallover {
+    transform: rotateX(180deg);
+    transition-duration: 0.3s;
+}
+
+.tech {
+    height: 50%;
+}
+.tech-list-box {
+    height: calc(100% - 2.5em);
+    overflow: auto;
+}
+.tech-list {
+    margin: 0;
+}
+.technology {
+    background: rgba(242,136,25,1);
+    height: 6em;
+    margin: 0.25em 0.5em;
+}
+.technology .icon {
+    float: left;
+    height: 6em;
+    position: relative;
+    width: 6em;
+}
+.technology .buy-button{
+    background: rgba(255,255,255,0.5);
+    bottom: 0;
+    position: absolute;
+    text-align: center;
+    width: 100%;
+}
+.technology h3 {
+    display: inline-block;
+}
+.technology p {
+    float: right;
+    margin: 0.25em;
+    width: 40%;
+}
+
+.modal {
+    box-shadow: 0 0 5px #222;
+    color: #fff;
+    height: 60vh;
+    left: 20vw;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 20vh;
+    width: 60vw;
+}
+.modal.open {
+    opacity: 1;
+    pointer-events: all;
+}
+.modal h1 {
+    background: #344F69;
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+}
+.modal-content {
+    background: #3A9CE7;
+    height: 40vh;
+    padding: 2em;
+    transform: rotateX(-90deg);
+    transform-origin: 0 0;
+    transition: transform 0.3s;
+}
+.modal.open .modal-content {
+    transform: rotateX(0deg);
+}
+.modal input {
+    background: #681BB4;
+    border: none;
+    color: #fff;
+    display: block;
+    font-size: 1.5em;
+    margin: 1rem auto;
+    padding: 0.5rem 1rem;
+}
+.modal input[type=text] {
+    background: #40ACFF;
+    border-bottom: solid 2px #681BB4;
+    width: 50%;
+}
+.modal .input-box {
+    text-align: center;
+}
+.modal .input-box input {
+    display: inline-block;
+}
