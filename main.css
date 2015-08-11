@@ -150,6 +150,7 @@ ul {
 }
 
 .log {
+    color: #fff;
     height: 50%;
 }
 .log-list {
@@ -360,4 +361,19 @@ ul {
 .modal .input-box input:hover{
     background: #fff;
     color: #681BB4;
+}
+.tooltip {
+    background: #3A9CE7;
+    box-shadow: 0 0 5px #222;
+    left: 0;
+    opacity: 0;
+    padding: 1em;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    transition: opacity 0.3s;
+}
+.tooltip.open {
+    opacity: 1;
+    transition: none;
 }

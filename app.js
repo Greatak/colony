@@ -22,6 +22,7 @@ INITIALIZATION
     o.elements.modalInput = doc.querySelector('.modal-content .text-box');
     o.elements.modalButtons = doc.querySelectorAll('.modal .button');
     o.elements.date = doc.querySelector('.date');
+    o.elements.tooltip = doc.querySelector('.tooltip');
     
     for(var i = o.elements.modalButtons.length;i--;){o.elements.modalButtons[i].addEventListener('click',clickModal);}
     
@@ -148,8 +149,14 @@ LOG AND NOTIFICATIONS
     }
     //o.note(message, class, postToLog)
     //o.noteHide()
-    //o.tooltip(content)
-    //o.tooltipHide()
+    o.tooltip = function(e,content){
+        o.elements.tooltip.classList.add('open');
+        o.elements.tooltip.style.transform = 'translate('+e.clientX+'px,'+e.clientY+'px)';
+        o.elements.tooltip.innerHTML = content.info();
+    }
+    o.tooltipHide = function(){
+        o.elements.tooltip.classList.remove('open');
+    }
     //o.tooltipAttach(element)
     
 /*/////////////////////////////////////////////////////////
@@ -164,7 +171,7 @@ RESOURCES
         this.children = [];     //if this is a composite measure, what makes it?
         this.types = [];        //categories
         this.cat = 'secondary';
-        this.icon = [];         //coords for spritesheet
+        this.icon = [0,0];         //coords for spritesheet
         this.desc = '';         //description for tooltip
         this.unlocked = 0;      //can you earn it?
         this.show = 0;        //does it show up?
@@ -197,7 +204,9 @@ RESOURCES
                 o.elements.resourceListSecondary.appendChild(this.element.container);
                 break;
         }
-        this.needsUpdate = false;
+        var clicky = {'handleEvent': function(e){ o.tooltip(e,this.that); }, 'that':this }
+        this.element.container.addEventListener('mouseover',clicky);
+        this.element.container.addEventListener('mouseleave',o.tooltipHide);
         
         o.resByName[this.name] = this;
         for(var i in this.types){
@@ -270,6 +279,19 @@ RESOURCES
         }
         this.needsUpdate = false;
     }
+    o.Resource.prototype.info = function(){
+        var s = '<h3>';
+        s += this.name.charAt(0).toUpperCase() + this.name.slice(1);
+        s += '</h3>';
+        if(this.children.length > 0){
+            s += '<ul>';
+            for(var i in this.children){
+                s += '<li>' + this.children[i].displayName + '</li>'
+            }
+            s += '</ul>';
+        }
+        return s;
+    }
     //returns a resource or a list of resources of a type, always an array
     o.resGet = function(r){
         var out = [];
@@ -316,7 +338,7 @@ BUILDINGS AND UNITS
         this.req = {};
         this.provide = {};
         this.enroll = {};
-        this.icon = [];
+        this.icon = [0,0];
         this.desc = '';
         this.unlocked = 0;
         this.show = 0;
@@ -519,7 +541,7 @@ TECHNOLOGY
         this.enroll = {};
         this.effects = [];
         this.reverseEffects = [];
-        this.icon = [];
+        this.icon = [0,0];
         this.desc = '';
         this.unlocked = 0;
         this.show = 0;
@@ -667,8 +689,7 @@ HELPER FUNCTIONS
         t.sell();
     }
     function clickModal(e){
-        var t = o.Modal.buttonEffects[e.target.dataset.id]
-        console.log(o.Modal.buttonEffects);
+        var t = o.Modal.buttonEffects[e.target.dataset.id];
         if(t) t();
     }
     

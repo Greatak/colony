@@ -13,6 +13,7 @@ new Colony.Resource({
                 count -= 1;
             }
         if(count < 0) count = 0;
+        if(amt < 0) amt = 0;
         Colony.resByName['food'].spend(amt);
         if(count != this.amount){
             this.spend(this.amount - count);
