@@ -168,7 +168,7 @@ new Colony.Building({
     'cost': {
         'thorny bush': 40,
         'soil' : 10
-    }
+    },
     'gather':{
         'basic-plant': 0.01
     },
