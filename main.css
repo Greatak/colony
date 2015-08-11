@@ -357,3 +357,7 @@ ul {
 .modal .input-box input {
     display: inline-block;
 }
+.modal .input-box input:hover{
+    background: #fff;
+    color: #681BB4;
+}

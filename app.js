@@ -56,6 +56,7 @@ MAIN LOOP
         dt = 0,         //this is seconds
         decaying = {};
     function tick(time){
+        //todo: random events
         requestAnimationFrame(tick);
         dt = (time - oldTime);
         oldTime = time;
@@ -125,11 +126,11 @@ LOG AND NOTIFICATIONS
         'buttons': o.elements.modalButtons,
         'buttonEffects': [],
         'input': o.elements.modalInput,
-        'open':function(){ o.Modal.container.classList.add('open'); },
-        'close':function(){ o.Modal.container.classList.remove('open'); }
+        'open':function(){ paused = true; o.Modal.container.classList.add('open'); },
+        'close':function(){ paused = false; o.Modal.container.classList.remove('open'); }
     }
     o.modal = function(title,content,buttons,textBox){
-        o.Modal.title = title;
+        o.elements.modalTitle.textContent = title;
         o.elements.modalContent.innerHTML = content;
         for(var i = 0; i < o.Modal.buttons.length; i++){
             if(!buttons[i]){
@@ -395,7 +396,7 @@ BUILDINGS AND UNITS
         if(!this.afford(amt)) return;
         for(var i in this.cost) o.resByName[i].spend(this.cost[i]*amt);
         for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].earn(this.cost[i]*amt);
+        for(var i in this.provide) o.resByName[i].earn(this.provide[i]*amt);
         this.amount += amt;
         this.needsUpdate = true;
         this.element.amount.classList.add('bounce');
@@ -407,7 +408,7 @@ BUILDINGS AND UNITS
         if(!this.amount) return;
         for(var i in this.cost) o.resByName[i].earn(this.cost[i]*amt);
         for(var i in this.use) o.resByName[i].used -= (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].spend(this.cost[i]*amt);
+        for(var i in this.provide) o.resByName[i].spend(this.provide[i]*amt);
         this.amount -= amt;
         this.needsUpdate = true;
         this.element.amount.classList.add('fallover');
@@ -588,7 +589,7 @@ TECHNOLOGY
         if(!this.afford(amt)) return;
         for(var i in this.cost) o.resByName[i].spend(this.cost[i]*amt);
         for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].earn(this.cost[i]*amt);
+        for(var i in this.provide) o.resByName[i].earn(this.provide[i]*amt);
         for(var i in this.unlock){
             var t = o.resByName[this.unlock[i]] || o.buildsByName[this.unlock[i]] || o.techsByName[this.unlock[i]];
             if(t && t.unlocked == 0) t.unlocked = 1;
@@ -615,7 +616,7 @@ TECHNOLOGY
         if(!this.amount) return;
         for(var i in this.cost) o.resByName[i].earn(this.cost[i]*amt);
         for(var i in this.use) o.resByName[i].used -= (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].spend(this.cost[i]*amt);
+        for(var i in this.provide) o.resByName[i].spend(this.provide[i]*amt);
         this.amount -= amt;
         this.needsUpdate = true;
     }

@@ -21,12 +21,25 @@ new Colony.Resource({
     'onSpend': function(amt){
         var s = (amt == 1)?'Someone ':amt + ' people ';
         Colony.log(s + 'died!','bad');
+        
+        if(this.amount == 0){
+            Colony.modal(
+                'Calamity!',
+                "Not every expedition is successful, but they should always teach us something. Maybe it's worth another go?",
+                [{'text':'Try Again','effect':function(){location.reload()}}]
+            )
+        }
     }
 });
 new Colony.Resource({
     'name':'housing',
     'symbol': 'Hs',
     'startAmount': 5,
+    'cat':'primary'
+});
+new Colony.Resource({
+    'name':'structure',
+    'symbol':'St',
     'cat':'primary'
 });
 new Colony.Resource({
@@ -48,31 +61,31 @@ new Colony.Resource({
 
 new Colony.Resource({
     'name': 'green berry',
-    'types' : ['forage','plant']
+    'types' : ['forage','basic-plant']
 });
 new Colony.Resource({
     'name': 'blue fruit',
-    'types' : ['forage','plant']
+    'types' : ['forage','basic-plant']
 });
 new Colony.Resource({
     'name': 'purple flower',
-    'types' : ['forage','plant']
+    'types' : ['forage','basic-plant']
 });
 new Colony.Resource({
     'name': 'ferrous rock',
-    'types' : ['forage','earth']
+    'types' : ['forage','basic-earth']
 });
 new Colony.Resource({
     'name': 'iridescent stone',
-    'types' : ['forage','earth']
+    'types' : ['forage','basic-earth']
 });
 new Colony.Resource({
     'name': 'thorny bush',
-    'types' : ['forage','plant']
+    'types' : ['forage','basic-plant']
 });
 new Colony.Resource({
     'name':'soil',
-    'types' : ['earth']
+    'types' : ['basic-earth']
 });
 
 new Colony.Building({
@@ -87,7 +100,7 @@ new Colony.Building({
     'desc':'Basic exploration staff to collect samples'
 });
 new Colony.Building({
-    'name' : 'comm officer',
+    'name' : 'quartermaster',
     'unlocked':1,
     'use' : {
         'population' : 1
@@ -127,21 +140,37 @@ new Colony.Building({
         'population' : 1
     },
     'gather':{
-        'earth': 0.05
+        'basic-earth': 0.05
     },
     'upkeep':{
         'food':0.1
     },
-    'desc':'Intensely studies anything your surveyors bring in'
+    'desc':'Extracts valuable minerals for sale or study, also produces quite a bit of dirt as a byproduct'
 });
+new Colony.Building({
+    'name' : 'engineer',
+    'use' : {
+        'population' : 1
+    },
+    'convert' : [
+       {'from' : {'soil':25,'ferrous rock':10},
+        'to' : {'structure':1},
+        'every':10}
+    ],
+    'upkeep':{
+        'food':0.1
+    },
+    'desc':'Versatile builders to transform the raw landscape into a sprawling metropolis, with time'
+});
+
 new Colony.Building({
     'name': 'greenhouse',
     'cost': {
         'thorny bush': 40,
         'soil' : 10
-    },
+    }
     'gather':{
-        'plant': 0.05
+        'basic-plant': 0.01
     },
     'desc':'Grows a variety of native plants'
 });
@@ -157,7 +186,7 @@ new Colony.Building({
         'population' : 0.05
     },
     
-    'desc':'Grows a variety of native plants'
+    'desc':'Brings in more people and gives them somewhere to sleep between flights'
 });
 
 function SetGroup(res,parent){
@@ -282,6 +311,17 @@ new Colony.Tech({
         'data': 20
     },
     'desc':"Solid footing is essential to establishing a permanent foothold on the planet",
+    'unlock':['engineer','construction']
+});
+new Colony.Tech({
+    'name':'fuel extraction',
+    'displayName': 'Fuel Extraction',
+    'cost':{
+        'soil':40,
+        'ferrous rock': 15,
+        'data': 25
+    },
+    'desc':"Fuel for machinery and rockets has been a significant barrier to growth, fix that",
     'unlock':['engineer','construction']
 });
 
