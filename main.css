@@ -377,3 +377,20 @@ ul {
     opacity: 1;
     transition: none;
 }
+
+.saved {
+    background: #3A9CE7;
+    bottom: 1rem;
+    box-shadow: 0 0 5px #222;
+    color: #fff;
+    font-size: 1.3em;
+    left: 1rem;
+    opacity: 0;
+    padding: 1rem;
+    position: absolute;
+    transition: opacity 1s;
+}
+.saved.open {
+    opacity: 1;
+    transition: none;
+}

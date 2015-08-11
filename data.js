@@ -27,7 +27,7 @@ new Colony.Resource({
             Colony.modal(
                 'Calamity!',
                 "Not every expedition is successful, but they should always teach us something. Maybe it's worth another go?",
-                [{'text':'Try Again','effect':function(){location.reload()}}]
+                [{'text':'Try Again','effect':function(){ Colony.wipeSave(); location.reload(); }}]
             )
         }
     }

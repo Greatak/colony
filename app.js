@@ -4,6 +4,7 @@ var Colony = function(win,doc,undefined){
 /*/////////////////////////////////////////////////////////
 INITIALIZATION
 /////////////////////////////////////////////////////////*/
+    o.version = '0.4'
     //Let's grab all the DOM elements
     o.elements = {};
     o.elements.resources = doc.querySelector('.resources');
@@ -23,6 +24,7 @@ INITIALIZATION
     o.elements.modalButtons = doc.querySelectorAll('.modal .button');
     o.elements.date = doc.querySelector('.date');
     o.elements.tooltip = doc.querySelector('.tooltip');
+    o.elements.saved = doc.querySelector('.saved');
     
     for(var i = o.elements.modalButtons.length;i--;){o.elements.modalButtons[i].addEventListener('click',clickModal);}
     
@@ -32,19 +34,22 @@ INITIALIZATION
     
     //Initialization stuff, this gets called after data.js loads
     function init(){
-        var letters = [['D','S','K'],['SP','EG','VQ'],['a','b','c','d','e']];
-        o.story.planetName = pickRandom(letters[0])+pickRandom(letters[1])+'-'+(Math.ceil(Math.random()*700))+pickRandom(letters[2]);
-        o.log('Arriving in system with a skeleton crew of 5 eager explorers');
-        o.modal('Welcome!',
+        if(!o.load()){
+            var letters = [['D','S','K'],['SP','EG','VQ'],['a','b','c','d','e']];
+            o.story.originalPlanetName = pickRandom(letters[0])+pickRandom(letters[1])+'-'+(Math.ceil(Math.random()*700))+pickRandom(letters[2]);
+            o.log('Arriving in system with a skeleton crew of 5 eager explorers');
+            o.modal('Welcome!',
             "Congratulations! It's been quite the journey to get to this point, but here it is: " + o.story.planetName + ". All initial surveys indicated the planet should be devoid of intelligent life but plenty of biological activity to study and maintain a breathable atmosphere. As leader of this expedition, your staff expect you to see to their safety and keep them supplied, but they understand this won't be easy. Whether this will be a successful, long-term expedition remains to be seen, but there should be plenty of resources for the Colonial Development Consortium to see some return on their investment. Speaking of investments, it might be better for recruiting if we gave this colony a snappier name.",
             [{'text':"Let's go!",'effect':function(){
                 o.story.planetName = o.Modal.input.value;
                 o.Modal.close();
             }}],
-            o.story.planetName)
+            o.story.originalPlanetName)
+        }
         o.resConsolodate();
         //check for saves and load them
         requestAnimationFrame(tick);
+        setTimeout(o.save,60000);
     }
     
     
@@ -425,6 +430,12 @@ BUILDINGS AND UNITS
         classDelay(this.element.amount, 'bounce', 30);
         if(this.onBuy) this.onBuy(amt);
     }
+    o.Building.prototype.forceBuy = function(amt){
+        if(!amt) return;
+        for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
+        for(var i in this.provide) o.resByName[i].earn(this.provide[i]*amt);
+        this.amount += amt;
+    }
     o.Building.prototype.sell = function(amt){
         amt = amt || 1;
         if(!this.amount) return;
@@ -632,6 +643,29 @@ TECHNOLOGY
         this.element.buy.style.display = 'none';
         //todo: disable buying?
     }
+    o.Tech.prototype.forceBuy = function(amt){
+        amt = amt || 1;
+        for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
+        for(var i in this.provide) o.resByName[i].earn(this.provide[i]*amt);
+        for(var i in this.unlock){
+            var t = o.resByName[this.unlock[i]] || o.buildsByName[this.unlock[i]] || o.techsByName[this.unlock[i]];
+            if(t && t.unlocked == 0) t.unlocked = 1;
+        }
+        for(var i in this.obsolete){
+            if(o.buildsByName[this.obsolete[i]]){
+                o.buildsByName[this.obsolete[i]].sell(o.buildsByName[this.obsolete[i]].amount);
+                o.buildsByName[this.obsolete[i]].unlocked = -1;
+            }else if(o.techsByName[this.obsolete[i]]){
+                o.techsByName[this.obsolete[i]].die();
+            }
+        }
+        for(var i in this.effects){
+            this.effects[i]();
+        }
+        this.amount += amt;
+        o.elements.techListBought.appendChild(this.element.container);
+        this.element.buy.style.display = 'none';
+    }
     o.Tech.prototype.sell = function(amt){
         //todo: this, but it probably won't be used, techs aren't sold
         amt = amt || 1;
@@ -675,7 +709,62 @@ TECHNOLOGY
             else{ this.element.container.classList.add('unaffordable'); }
         }
     }
+
+/*/////////////////////////////////////////////////////////
+SAVE AND LOAD
+/////////////////////////////////////////////////////////*/    
     
+    o.save = function(){
+        localStorage.setItem('colony-game',JSON.stringify(writeSave()));
+        setTimeout(o.save,60000);
+        o.elements.saved.classList.add('open');
+        classDelay(o.elements.saved,'open',1000);
+    }
+    o.load = function(){
+        var loaded = JSON.parse(localStorage.getItem('colony-game'));
+        if(!loaded)return false;
+        for(var i in loaded.story){
+            o.story[i] = loaded.story[i];
+        }
+        totalTime = loaded.time;
+        for(var i in loaded.res){
+            o.res[i].amount = loaded.res[i].amount;
+            o.res[i].multiplier = loaded.res[i].multiplier;
+            o.res[i].efficiency = loaded.res[i].efficiency;
+        }
+        for(var i in loaded.techs){
+            if(loaded.techs[i]) o.techs[i].forceBuy();
+        }
+        for(var i in loaded.builds){
+            o.builds[i].forceBuy(loaded.builds[i].amount);
+            o.builds[i].efficiency = loaded.builds[i].efficiency;
+        }
+        return true;
+    }
+    o.wipeSave = function(){
+        localStorage.removeItem('colony-game');
+    }
+    function writeSave(){
+        var obj = {'version':o.version,'res':{},'builds':{},'techs':{},'story':{},'time':totalTime};
+        for(var i in o.res){
+            obj.res[i] = {};
+            obj.res[i].amount = o.res[i].amount;
+            obj.res[i].multiplier = o.res[i].multiplier;
+            obj.res[i].efficiency = o.res[i].efficiency;
+        }
+        for(var i in o.builds){
+            obj.builds[i] = {};
+            obj.builds[i].amount = o.builds[i].amount;
+            obj.builds[i].efficiency = o.builds[i].efficiency;
+        }
+        for(var i in o.techs){
+            obj.techs[i] = o.techs[i].amount;
+        }
+        for(var i in o.story){
+            obj.story[i] = o.story[i];
+        }
+        return obj;
+    }
     
 /*/////////////////////////////////////////////////////////
 HELPER FUNCTIONS
@@ -707,6 +796,7 @@ HELPER FUNCTIONS
     function pickRandom(arr){
         return arr[Math.floor(Math.random()*arr.length)];
     }
+    
     
     function ready(){
         if(Colony.ready){init()}
