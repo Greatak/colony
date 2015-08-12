@@ -28,6 +28,10 @@ ul {
 .hide {
     display: none !important;
 }
+.icon {
+    background-repeat: no-repeat;
+    background-size: auto 100% !important;
+}
 
 .main-container {
     height: 100%;
@@ -64,6 +68,9 @@ ul {
 .unaffordable {
     opacity: .5;
     pointer-events: none;
+}
+.insufficient {
+    color: #f00;
 }
 .glass {
     position: relative;

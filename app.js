@@ -4,7 +4,7 @@ var Colony = function(win,doc,undefined){
 /*/////////////////////////////////////////////////////////
 INITIALIZATION
 /////////////////////////////////////////////////////////*/
-    o.version = '0.4'
+    o.version = 0.04;
     //Let's grab all the DOM elements
     o.elements = {};
     o.elements.resources = doc.querySelector('.resources');
@@ -29,20 +29,22 @@ INITIALIZATION
     for(var i = o.elements.modalButtons.length;i--;){o.elements.modalButtons[i].addEventListener('click',clickModal);}
     
     o.story = {};
+    o.story.res = {};
     
     var paused = false;
     
     //Initialization stuff, this gets called after data.js loads
     function init(){
+        o.loadStory();
+        loadData();
         if(!o.load()){
             var letters = [['D','S','K'],['SP','EG','VQ'],['a','b','c','d','e']];
-            o.story.originalPlanetName = pickRandom(letters[0])+pickRandom(letters[1])+'-'+(Math.ceil(Math.random()*700))+pickRandom(letters[2]);
+            o.story.originalPlanetName = choose(letters[0])+choose(letters[1])+'-'+(Math.ceil(Math.random()*700))+choose(letters[2]);
             o.log('Arriving in system with a skeleton crew of 5 eager explorers');
             o.modal('Welcome!',
             "Congratulations! It's been quite the journey to get to this point, but here it is: " + o.story.planetName + ". All initial surveys indicated the planet should be devoid of intelligent life but plenty of biological activity to study and maintain a breathable atmosphere. As leader of this expedition, your staff expect you to see to their safety and keep them supplied, but they understand this won't be easy. Whether this will be a successful, long-term expedition remains to be seen, but there should be plenty of resources for the Colonial Development Consortium to see some return on their investment. Speaking of investments, it might be better for recruiting if we gave this colony a snappier name.",
             [{'text':"Let's go!",'effect':function(){
                 o.story.planetName = o.Modal.input.value;
-                o.Modal.close();
             }}],
             o.story.originalPlanetName)
         }
@@ -182,11 +184,18 @@ RESOURCES
         this.show = 0;        //does it show up?
         this.multiplier = 1;    //when earned, should we change the amount?
         this.efficiency = 1;    //when spent, should we change the amount?
+        this.editable = 0;
         
         for (var i in obj) this[i]=obj[i];
         
         this.id = o.res.length;
-        if(!this.displayName) this.displayName = (this.symbol)? this.symbol : this.name.charAt(0).toUpperCase() + this.name.slice(1);
+        if(!o.story.res[this.name]) o.story.res[this.name] = {};
+        if(!this.displayName) this.displayName = capitalize(this.name);
+        
+        if(this.prefix){
+            if(!o.story.res[this.name].prefix)o.story.res[this.name].prefix = choose(this.prefix);
+            this.displayName = capitalize(o.story.res[this.name].prefix) + ' ' + this.displayName;
+        }
         
         this.amount = this.startAmount || 0;
         this.displayAmount = Math.floor(this.amount)
@@ -276,7 +285,7 @@ RESOURCES
         
         if(this.amount < 0) this.amount = 0;
         this.displayAmount = Math.floor(this.amount);
-        if(this.displayAmount) this.show = 1;
+        if(!this.meta && this.displayAmount) this.show = 1;
         if(this.show){
             this.element.container.classList.remove('hide');
         }else{
@@ -296,6 +305,23 @@ RESOURCES
             s += '</ul>';
         }
         return s;
+    }
+    o.Resource.prototype.rename = function(name){
+        if(!name)return;
+        o.story.res[this.name].prefix = name;
+        this.displayName = capitalize(o.story.res[this.name].prefix) + ' ' + capitalize(this.name);
+    }
+    o.Resource.prototype.edit = function(){
+        var that = this;
+        Colony.modal(
+            'Rename ' + this.displayName,
+            "",
+            [
+                {'text':'Accept','effect':function(){ that.rename(o.Modal.input.value); }},
+                {'text':'Cancel','effect':function(){ }}
+            ],
+            o.story.res[this.name].prefix
+        )
     }
     //returns a resource or a list of resources of a type, always an array
     o.resGet = function(r){
@@ -347,6 +373,8 @@ BUILDINGS AND UNITS
         this.desc = '';
         this.unlocked = 0;
         this.show = 0;
+        this.efficiency = 1;
+        this.staffed = 0;
         
         for (var i in obj) this[i] = obj[i];
 		this.id = o.builds.length;
@@ -362,7 +390,7 @@ BUILDINGS AND UNITS
         this.element.container.appendChild(this.element.name);
         this.element.icon = doc.createElement('div');
         this.element.icon.className = 'icon';
-        this.element.icon.style.backgroundPosition = (this.icon[0]*32) + 'px ' + (this.icon[1]*32) + 'px';
+        this.element.icon.style.backgroundPosition = (this.icon[0]*64) + 'px ' + (this.icon[1]*64) + 'px';
         this.element.container.appendChild(this.element.icon);
         this.element.desc = doc.createElement('p');
         this.element.desc.textContent = this.desc;
@@ -384,7 +412,7 @@ BUILDINGS AND UNITS
         this.element.cost.className = 'cost-list';
         var html = '';
         for(var i in this.cost){
-            html += '<li>' + this.cost[i] + ' ' + o.resByName[i].displayName + '</li>';
+            html += '<li>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
         }
         this.element.cost.innerHTML = html;
         this.element.container.appendChild(this.element.cost);
@@ -392,7 +420,7 @@ BUILDINGS AND UNITS
         this.element.use.className = 'use-list';
         var html = '';
         for(var i in this.use){
-            html += '<li>' + this.use[i] + ' ' + o.resByName[i].displayName + '</li>';
+            html += '<li>' + this.use[i] + ' ' + o.resByName[i].name + '</li>';
         }
         this.element.use.innerHTML = html;
         this.element.container.appendChild(this.element.use);
@@ -428,13 +456,22 @@ BUILDINGS AND UNITS
         this.needsUpdate = true;
         this.element.amount.classList.add('bounce');
         classDelay(this.element.amount, 'bounce', 30);
+        if(!this.staffed){
+            for(var i in this.cost){
+                this.cost[i] = Math.floor(this.cost[i] * Math.pow(1.1,amt));
+            }
+        }
         if(this.onBuy) this.onBuy(amt);
     }
     o.Building.prototype.forceBuy = function(amt){
         if(!amt) return;
         for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].earn(this.provide[i]*amt);
         this.amount += amt;
+        if(!this.staffed){
+            for(var i in this.cost){
+                this.cost[i] = Math.floor(this.cost[i] * Math.pow(1.1,amt));
+            }
+        }
     }
     o.Building.prototype.sell = function(amt){
         amt = amt || 1;
@@ -472,13 +509,20 @@ BUILDINGS AND UNITS
         }else{
             this.element.container.classList.add('hide');
         }
+        var html = '';
+        for(var i in this.cost){
+            html += '<li';
+            if(this.cost[i] > o.resByName[i].amount) html += ' class=insufficient ';
+            html += '>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
+        }
+        this.element.cost.innerHTML = html;
         
         //loop through the different activity types it might have
         //start with gathering
         if(this.amount && this.gather){
             for(var i in this.gather){
                 var res = i,
-                    chance = this.gather[i] * this.amount * dt,     //the gather number should be x per second
+                    chance = this.gather[i] * this.amount * this.efficiency * dt,     //the gather number should be x per second
                     pool = o.resGet(res);
                     
                     if(pool.length > 0){
@@ -555,7 +599,7 @@ TECHNOLOGY
         this.icon = [0,0];
         this.desc = '';
         this.unlocked = 0;
-        this.show = 0;
+        this.show = 1;
         
         for (var i in obj) this[i] = obj[i];
 		this.id = o.techs.length;
@@ -587,7 +631,7 @@ TECHNOLOGY
         this.element.cost.className = 'cost-list';
         var html = '';
         for(var i in this.cost){
-            html += '<li>' + this.cost[i] + ' ' + o.resByName[i].displayName + '</li>';
+            html += '<li>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
         }
         this.element.cost.innerHTML = html;
         this.element.container.appendChild(this.element.cost);
@@ -698,8 +742,8 @@ TECHNOLOGY
         this.amount -= amt;
     }
     o.Tech.prototype.update = function(){
-        this.show = (this.unlocked) ? 1 : 0;
-        if(this.show){
+        if(this.unlocked && !this.show && this.afford())this.show = 1;
+        if(this.show && this.unlocked){
             this.element.container.classList.remove('hide');
         }else{
             this.element.container.classList.add('hide');
@@ -708,6 +752,13 @@ TECHNOLOGY
             if(this.afford(1)){ this.element.container.classList.remove('unaffordable'); }
             else{ this.element.container.classList.add('unaffordable'); }
         }
+        var html = '';
+        for(var i in this.cost){
+            html += '<li';
+            if(this.cost[i] > o.resByName[i].amount) html += ' class=insufficient ';
+            html += '>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
+        }
+        this.element.cost.innerHTML = html;
     }
 
 /*/////////////////////////////////////////////////////////
@@ -715,17 +766,18 @@ SAVE AND LOAD
 /////////////////////////////////////////////////////////*/    
     
     o.save = function(){
-        localStorage.setItem('colony-game',JSON.stringify(writeSave()));
         setTimeout(o.save,60000);
+        if(paused)return;   //don't save mid-modal interrupt, just try again later
+        localStorage.setItem('colony-game',JSON.stringify(writeSave()));
         o.elements.saved.classList.add('open');
         classDelay(o.elements.saved,'open',1000);
+    }
+    o.gimmeSave = function(){
+        return JSON.parse(localStorage.getItem('colony-game'));
     }
     o.load = function(){
         var loaded = JSON.parse(localStorage.getItem('colony-game'));
         if(!loaded)return false;
-        for(var i in loaded.story){
-            o.story[i] = loaded.story[i];
-        }
         totalTime = loaded.time;
         for(var i in loaded.res){
             o.res[i].amount = loaded.res[i].amount;
@@ -740,6 +792,11 @@ SAVE AND LOAD
             o.builds[i].efficiency = loaded.builds[i].efficiency;
         }
         return true;
+    }
+    o.loadStory = function(){
+        var loaded = JSON.parse(localStorage.getItem('colony-game'));
+        if(!loaded)return false;
+        o.story = loaded.story;
     }
     o.wipeSave = function(){
         localStorage.removeItem('colony-game');
@@ -760,9 +817,7 @@ SAVE AND LOAD
         for(var i in o.techs){
             obj.techs[i] = o.techs[i].amount;
         }
-        for(var i in o.story){
-            obj.story[i] = o.story[i];
-        }
+        obj.story = o.story;
         return obj;
     }
     
@@ -780,6 +835,7 @@ HELPER FUNCTIONS
     function clickModal(e){
         var t = o.Modal.buttonEffects[e.target.dataset.id];
         if(t) t();
+        o.Modal.close();
     }
     
     function classDelay(element,tag,delay){
@@ -793,9 +849,6 @@ HELPER FUNCTIONS
             }
         },delay)
     }
-    function pickRandom(arr){
-        return arr[Math.floor(Math.random()*arr.length)];
-    }
     
     
     function ready(){
@@ -805,3 +858,9 @@ HELPER FUNCTIONS
     setTimeout(ready, 10);
     return o;
 }(window,document);
+function choose(arr){
+    return arr[Math.floor(Math.random()*arr.length)];
+}
+function capitalize(s){
+    return s.charAt(0).toUpperCase() + s.slice(1)
+}
