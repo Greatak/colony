@@ -212,6 +212,10 @@ RESOURCES
         this.element = {};
         this.element.container = doc.createElement('li');
         this.element.container.className = 'resource';
+        this.element.icon = doc.createElement('div');
+        this.element.icon.className = 'icon';
+        this.element.icon.style.backgroundPosition = (this.icon[0]*-80) + 'px ' + (this.icon[1]*128) + 'px';
+        this.element.container.appendChild(this.element.icon);
         this.element.name = doc.createElement('h3');
         this.element.name.textContent = this.displayName;
         this.element.container.appendChild(this.element.name);
@@ -804,16 +808,17 @@ SAVE AND LOAD
         if(!loaded)return false;
         totalTime = loaded.time;
         for(var i in loaded.res){
-            o.res[i].amount = loaded.res[i].amount;
-            o.res[i].multiplier = loaded.res[i].multiplier;
-            o.res[i].efficiency = loaded.res[i].efficiency;
+            o.resByName[i].amount = loaded.res[i].amount;
+            o.resByName[i].multiplier = loaded.res[i].multiplier;
+            o.resByName[i].efficiency = loaded.res[i].efficiency;
         }
         for(var i in loaded.techs){
-            if(loaded.techs[i]) o.techs[i].forceBuy();
+            if(loaded.techs[i]) o.techsByName[i].forceBuy();
         }
         for(var i in loaded.builds){
-            o.builds[i].forceBuy(loaded.builds[i].amount);
-            o.builds[i].efficiency = loaded.builds[i].efficiency;
+            o.buildsByName[i].forceBuy(loaded.builds[i].amount);
+            o.buildsByName[i].multiplier = loaded.builds[i].multiplier;
+            o.buildsByName[i].efficiency = loaded.builds[i].efficiency;
         }
         return true;
     }
@@ -827,19 +832,20 @@ SAVE AND LOAD
     }
     function writeSave(){
         var obj = {'version':o.version,'res':{},'builds':{},'techs':{},'story':{},'time':totalTime};
-        for(var i in o.res){
+        for(var i in o.resByName){
             obj.res[i] = {};
-            obj.res[i].amount = o.res[i].amount;
-            obj.res[i].multiplier = o.res[i].multiplier;
-            obj.res[i].efficiency = o.res[i].efficiency;
+            obj.res[i].amount = o.resByName[i].amount;
+            obj.res[i].multiplier = o.resByName[i].multiplier;
+            obj.res[i].efficiency = o.resByName[i].efficiency;
         }
-        for(var i in o.builds){
+        for(var i in o.buildsByName){
             obj.builds[i] = {};
-            obj.builds[i].amount = o.builds[i].amount;
-            obj.builds[i].efficiency = o.builds[i].efficiency;
+            obj.builds[i].amount = o.buildsByName[i].amount;
+            obj.builds[i].multiplier = o.buildsByName[i].multiplier;
+            obj.builds[i].efficiency = o.buildsByName[i].efficiency;
         }
-        for(var i in o.techs){
-            obj.techs[i] = o.techs[i].amount;
+        for(var i in o.techsByName){
+            obj.techs[i] = o.techsByName[i].amount;
         }
         obj.story = o.story;
         return obj;

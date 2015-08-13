@@ -15,6 +15,10 @@ function loadData(){
         'startAmount':100
     });
     new Colony.Resource({
+        'name':'independence',
+        'meta':1
+    });
+    new Colony.Resource({
         'name' : 'livestock',
         'meta':1
     });
@@ -24,6 +28,7 @@ function loadData(){
         'name' : 'population',
         'symbol' : 'Ppl',
         'startAmount' : 5,
+        'icon':[2,0],
         'cap': 'housing',
         'usable': 1,
         'cat': 'primary',
@@ -57,34 +62,42 @@ function loadData(){
     new Colony.Resource({
         'name':'housing',
         'symbol': 'Hs',
+        'icon':[3,0],
         'startAmount': 5,
         'cat':'primary'
     });
     new Colony.Resource({
         'name':'structure',
+        'icon':[4,0],
         'symbol':'St',
         'cat':'primary'
     });
     new Colony.Resource({
         'name': 'data',
+        'icon':[5,0],
         'cat': 'primary'
     });
     new Colony.Resource({
         'name' : 'food',
         'symbol' : 'Fd',
+        'icon':[6,0],
         'cat' : 'primary',
         'desc': 'Your people will need at least 1 meal per day'
     });
     new Colony.Resource({
         'name': 'fuel',
+        'icon':[7,0],
         'cat': 'primary'
     });
     new Colony.Resource({
         'name': 'energy',
+        'usable':1,
+        'icon':[8,0],
         'cat': 'primary'
     });
     new Colony.Resource({
         'name': 'materials',
+        'icon':[9,0],
         'cat': 'primary'
     });
     

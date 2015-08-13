@@ -106,13 +106,13 @@ ul {
     text-align: center;
 }
 .primary .resource {
-    background: rgba(255,255,255,0.3);
     display: inline-block;
     height: 5em;
     position: relative;
     width: 5em;
 }
 .primary .resource h3 {
+    display: none;
     left: -25%;
     position: absolute;
     text-align: center;
@@ -120,9 +120,22 @@ ul {
 }
 .primary .resource p {
     bottom: 0;
+    color: #fff;
+    font-weight: 700;
     left: 0;
+    margin: 0;
     position: absolute;
     text-align: center;
+    text-shadow: 1px 1px 1px #000;
+    width: 100%;
+}
+.primary .icon {
+    background: url('sprite.png');
+    font-weight: 700;
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
     width: 100%;
 }
 .secondary {
@@ -271,6 +284,7 @@ ul {
     margin: 0.5em 0;
     position: absolute;
     text-align: center;
+    text-shadow: 1px 1px 1px #000;
     transform: translateY(0px) scale(1);
     transition: transform 0.1s;
     width: 100%;
