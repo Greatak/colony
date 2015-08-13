@@ -1,4 +1,5 @@
 function loadData(){
+//HIDDEN RESOURCES
     new Colony.Resource({   //adapting to the native ecosystem
         'name':'harmony',
         'meta':1
@@ -8,6 +9,17 @@ function loadData(){
         'meta':1,
         'startAmount':100
     });
+    new Colony.Resource({   //happiness of colonists, should gradually decay, not implemented
+        'name':'morale',
+        'meta':1,
+        'startAmount':100
+    });
+    new Colony.Resource({
+        'name' : 'livestock',
+        'meta':1
+    });
+    
+//PRIMARY RESOURCES
     new Colony.Resource({
         'name' : 'population',
         'symbol' : 'Ppl',
@@ -56,20 +68,33 @@ function loadData(){
     new Colony.Resource({
         'name': 'data',
         'cat': 'primary'
-    })
-
+    });
     new Colony.Resource({
         'name' : 'food',
         'symbol' : 'Fd',
-        'cat' : 'primary'
+        'cat' : 'primary',
+        'desc': 'Your people will need at least 1 meal per day'
     });
+    new Colony.Resource({
+        'name': 'fuel',
+        'cat': 'primary'
+    });
+    new Colony.Resource({
+        'name': 'energy',
+        'cat': 'primary'
+    });
+    new Colony.Resource({
+        'name': 'materials',
+        'cat': 'primary'
+    });
+    
+//SECONDARY RESOURCES
     new Colony.Resource({
         'name': 'ration',
         'displayName': 'Ration Pack',
         'parent': 'food',
         'startAmount': 20
     })
-
     new Colony.Resource({
         'name': 'berry',
         'prefix' : ['green','yellow','mauve'],
@@ -88,7 +113,8 @@ function loadData(){
     new Colony.Resource({
         'name': 'rock',
         'prefix' : ['ferrous','magnetic','aluminous'],
-        'types' : ['forage','basic-earth']
+        'types' : ['forage','basic-earth'],
+        'parent':'materials'
     });
     new Colony.Resource({
         'name': 'stone',
@@ -106,13 +132,68 @@ function loadData(){
     });
     new Colony.Resource({
         'name':'ferae',
+        'multiplier':0,
+        'prefix' : ['canine','reptilian','amphibious'],
         'types' : ['animal']
     });
     new Colony.Resource({
         'name':'bovid',
+        'multiplier':0,
+        'prefix' : ['wooly','hooved','scaly'],
         'types' : ['animal']
     });
+    new Colony.Resource({
+        'name':'cow',
+        'types': ['imported-animal']
+    });
+    new Colony.Resource({
+        'name':'goat',
+        'types': ['imported-animal']
+    });
+    new Colony.Resource({
+        'name':'hydrocarbon',
+        'parent':'fuel'
+    });
+    new Colony.Resource({
+        'name':'iron'
+    });
+    new Colony.Resource({
+        'name':'copper'
+    });
+    new Colony.Resource({
+        'name':'aluminum'
+    });
+    new Colony.Resource({
+        'name':'zinc'
+    });
 
+//BUILDINGS
+//
+//name - internal id, can't overlap, visible if no displayName
+//displayName - displayed on the building listStyleType
+//icon - [x,y] simplified coordinates on the sprite sheet
+//staffed - true/false, defaults false, if false, then it gets 10% more expensive each purchase
+//unlocked - true/false, defaults false, if true, you start with this
+//recycled - true/false, defaults false, if true, you get back the 'cost' resources when it fails upkeep
+//desc - visible description, should be no more than a sentence
+//efficiency - multiplies the upkeep rate
+//multiplier - multiplies the gather rate
+//
+//use - resources that the building will passively occupy, like population or energy
+//cost - resources needed to buy it
+//req - resources you just need to have to buy it, can also be other buildings or techs
+//gather - resoruces to acquire per second, can use resource types too
+//convert - array of conversion objects {'from':{resourcelist},'to':{resourcelist},'every':x,'chance':y}
+//  every x seconds tries to use up as many sets of 'from' as there are buildings owned
+//  gives you a corresponding number of 'to' sets, but if 'chance' is set then it fails and gives nothing y percent of the time
+//upkeep - resources you need per second to keep the building, works sort of like convert, destroying only enough to satisfy the inadequate resource
+//provide - resources the building passively adds as long as you have it
+//enroll - buildings that it will continue to try to make until at least that many exist
+//onTick(dt) - function to execute every game tick, dt is time, in seconds, since the last tick
+//onBuy(amount) - function to execute any time one of these are bought, doesn't fire on a forceBuy (like when the game loads)
+//onSell(amount) - function to execute any time one of these are sold
+//onDie(amount) - function to execute any time one of these dies
+//
     new Colony.Building({
         'name':'surveyor',
         'unlocked':1,
@@ -121,7 +202,8 @@ function loadData(){
             'population' : 1
         },
         'gather':{
-            'forage' : 0.1
+            'forage' : 0.1,
+            'animal' : 0.02
         },
         'desc':'Basic exploration staff to collect samples'
     });
@@ -174,7 +256,7 @@ function loadData(){
         'upkeep':{
             'food':0.1
         },
-        'desc':'Extracts valuable minerals for sale or study, also produces quite a bit of dirt as a byproduct'
+        'desc':'Extracts valuable minerals for sale or study'
     });
     new Colony.Building({
         'name' : 'engineer',
@@ -183,14 +265,14 @@ function loadData(){
             'population' : 1
         },
         'convert' : [
-           {'from' : {'soil':25,'rock':10},
+           {'from' : {'soil':25,'materials':10},
             'to' : {'structure':1},
             'every':10}
         ],
         'upkeep':{
             'food':0.1
         },
-        'desc':'Versatile builders to transform the raw landscape into a sprawling metropolis, with time'
+        'desc':'Versatile builders necessary to build anything substantial'
     });
 
     new Colony.Building({
@@ -211,14 +293,99 @@ function loadData(){
             'bush': 60,
             'soil' : 10
         },
-        'provide': {'housing':3},
+        'provide': {'housing':2},
         'gather': {
             'population' : 0.05
         },
         
         'desc':'Brings in more people and gives them somewhere to sleep between flights'
     });
+    new Colony.Building({
+        'name':'ranch',
+        'req':{
+            'domestication':1,
+            'husbandry':1
+        },
+        'cost':{
+            'bush':50,
+            'materials':10,
+            'soil':30
+        },
+        'convert':[
+            {'from' : {'bovid':2},
+            'to' : {'bovid':3},
+            'every':10},
+            {'from' : {'cow':2},
+            'to' : {'cow':3},
+            'every':10},
+            {'from' : {'goat':2},
+            'to' : {'goat':3},
+            'every':10},
+            {'from' : {'ferae':2},
+            'to' : {'ferae':3},
+            'every':20}
+        ],
+        'desc':"Raises animals, but they'll die without flowers to eat",
+        'onTick': function(dt){
+            var count = this.amount,
+                amt = 0.05 * count * dt * Colony.resByName['flower'].efficiency;
+                while(amt > Colony.resByName['flower'].amount){
+                    amt -= 3 * dt;
+                    count -= 1;
+                }
+            if(count < 0) count = 0;
+            if(amt < 0) amt = 0;
+            Colony.resByName['flower'].spend(amt);
+            if(count != this.amount){
+                Colony.resByName['livestock'].spend(Math.max(0,this.amount - count));
+            }
+        }
+    });
+    new Colony.Building({
+        'name':'methane well',
+        'displayName':'Methane Well',
+        'cost':{
+            'materials':50
+        },
+        'gather':{
+            'hydrocarbon':0.5
+        },
+        'desc':'Extracts fuel to vital to expand the colony'
+    });
+    new Colony.Building({
+        'name':'methplant',
+        'displayName':'Combustion Power Plant',
+        'recycled':1,
+        'use':{
+            'structure':5
+        },
+        'cost':{
+            'materials':100
+        },
+        'upkeep':{
+            'fuel':1
+        },
+        'provide':{
+            'energy':50
+        },
+        'desc':'Burns fuel to provide a source of power'
+    });
+    new Colony.Building({
+        'name':'simplehouse',
+        'displayName':'Small Dwelling',
+        'use':{
+            'structure':1
+        },
+        'cost':{
+            'bush':100,
+            'materials':20
+        },
+        'provide':{
+            'housing':8
+        }
+    });
 
+//TECHNOLOGY    
     function SetGroup(res,parent){
         var r = Colony.resByName[res],
             p = Colony.resByName[parent];
@@ -236,7 +403,12 @@ function loadData(){
     function AddMult(res,n){
         var r = Colony.resByName[res];
         if(!r)return;
-        return function(){ r.multipler *= n; };
+        return function(){ r.multiplier *= n; };
+    }
+    function SetMult(res,n){
+        var r = Colony.resByName[res];
+        if(!r)return;
+        return function(){ r.multiplier = n; };
     }
     function AddEff(res,n){
         var r = Colony.resByName[res];
@@ -261,7 +433,6 @@ function loadData(){
     });
     new Colony.Tech({
         'name':'habitation',
-        'displayName': 'Habitats',
         'cost':{
             'bush': 50,
             'rock': 15,
@@ -277,11 +448,11 @@ function loadData(){
             'fruit': 30,
             'data': 5
         },
-        'desc':'Study local flora to find supplemental foods',
+        'desc':'Study local flora for anything edible',
         'effects':[
             SetGroup('fruit','food'),
             AddEff('food',1.1),
-            Log('The colonists grumble about rationing with so much food around.')
+            Log('Colonists grumble about rationing with so much food around')
         ],
         'unlock':['xenobotany','edaphology']
     });
@@ -315,12 +486,64 @@ function loadData(){
     });
     new Colony.Tech({
         'name':'edaphology',
-        'displayName': 'Edaphology',
         'cost':{
             'data': 20
         },
         'desc':"Local plants thrive in what appear to be rich soils. Gathering some is essential for cultivation.",
-        'unlock':['miner','foundations']
+        'unlock':['miner','foundations','zoology']
+    });
+    new Colony.Tech({
+        'name':'zoology',
+        'displayName':'Native Zoology',
+        'cost':{
+            'flower':50,
+            'data':10
+        },
+        'desc':"Local wildlife has caught the curiosity of some colonists, your survey teams should be able to capture some.",
+        'effects':[
+            SetMult('ferae',1),
+            SetMult('bovid',1),
+            SetGroup('bovid','food')
+        ],
+        'unlock':['domestication','husbandry','taxonomy']
+    });
+    new Colony.Tech({
+        'name':'domestication',
+        'displayName':'Docile Epigenetics',
+        'cost':{
+            'bovid':2,
+            'data':20
+        },
+        'desc':"Fast-track domestication for the native bovids",
+        'effects':[
+            AddMult('bovid',1.3)
+        ],
+        'unlock':['ranch']
+    });
+    new Colony.Tech({
+        'name':'husbandry',
+        'displayName':'Embryo Transfer',
+        'cost':{
+            'bovid':10,
+            'data':30
+        },
+        'desc':"Long-term domestication will require modern husbandry techniques",
+        'unlock':['ranch']
+    });
+    new Colony.Tech({
+        'name':'taxonomy',
+        'req':{
+            'ferae':1,
+            'bovid':1
+        },
+        'cost':{
+            'data':40
+        },
+        'desc':"Snappier names might increase interest in the local ecosystem",
+        'effects':[
+            Rename('ferae','',1),
+            Rename('bovid','',1)
+        ]
     });
     new Colony.Tech({
         'name':'geophysics',
@@ -328,10 +551,10 @@ function loadData(){
             'rock': 20,
             'data':20
         },
-        'desc':'Surface veins are ultimately shallow, detailed studies of the planet are needed to find rich deposits',
+        'desc':'Surface veins are shallow, detailed studies of the planet are needed to find rich deposits',
         'effects':[
             AddMult('rock',1.1),
-            Log('Extensive mapping has revealed a few iron veins nearby')
+            Log('Extensive mapping has reveal rich deposits nearby')
         ],
         'unlock':['foundations','fuel extraction']
     });
@@ -343,7 +566,8 @@ function loadData(){
             'rock': 30,
             'data': 20
         },
-        'desc':"Solid footing is essential to establishing a permanent foothold on the planet",
+        'desc':"Solid footing is essential to establishing a permanent foothold on the planet.",
+        'effects':[Log('Colonial administrator determined to establish settlement on ' + Colony.story.planetName)],
         'unlock':['engineer','construction']
     });
     new Colony.Tech({
@@ -354,8 +578,31 @@ function loadData(){
             'rock': 15,
             'data': 25
         },
-        'desc':"Fuel for machinery and rockets has been a significant barrier to growth, fix that",
-        'unlock':['methane well']
+        'desc':"Fuel for machinery and rockets has been a significant barrier to growth. Let's fix that.",
+        'unlock':['hydrogen mining','methplant','methane well']
     });
+    new Colony.Tech({
+        'name':'hydrogen mining',
+        'displayName': 'Hydrogen Liberation',
+        'req':{
+            'engineer':3
+        },
+        'cost':{
+            'fuel':50,
+            'data':25
+        }
+    });
+    new Colony.Tech({
+        'name':'construction',
+        'req':{
+            'engineer':2
+        },
+        'cost':{
+            'rock':20,
+            'structure':5
+        },
+        'desc':"Our engineers can start planning for development, starting with housing.",
+        'unlock':['simplehouse']
+    })
 }
 Colony.ready = true;

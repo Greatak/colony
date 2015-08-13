@@ -36,6 +36,15 @@ INITIALIZATION
     //Initialization stuff, this gets called after data.js loads
     function init(){
         o.loadStory();
+        if(!o.story.mineralOrder){
+            o.story.mineralOrder = choose([
+                ['iron','aluminum','zinc','copper'],
+                ['iron','aluminum','copper','zinc'],
+                ['aluminum','iron','zinc','copper'],
+                ['aluminum','iron','copper','zinc']
+            ]);
+        }
+        
         loadData();
         if(!o.load()){
             var letters = [['D','S','K'],['SP','EG','VQ'],['a','b','c','d','e']];
@@ -210,6 +219,11 @@ RESOURCES
         this.element.amount.textContent = (this.usable)? Math.floor(this.used) + '/' + this.displayAmount : this.disaplayAmount;
         this.element.container.appendChild(this.element.amount);
         if(!this.show){this.element.container.classList.add('hide');}
+        this.element.edit = doc.createElement('div');
+        this.element.edit.className = 'edit-button icon';
+        this.element.edit.addEventListener('click',clickEdit);
+        this.element.edit.dataset.id = this.name;
+        this.element.container.appendChild(this.element.edit);
         switch(this.cat){
             case 'primary':
                 o.elements.resourceListPrimary.appendChild(this.element.container);
@@ -282,6 +296,7 @@ RESOURCES
         }
         this.element.name.textContent = this.displayName;
         this.element.amount.textContent = (this.usable)? Math.floor(this.used) + '/' + this.displayAmount : this.displayAmount;
+        this.element.edit.style.display = (this.editable)?'block':'none';
         
         if(this.amount < 0) this.amount = 0;
         this.displayAmount = Math.floor(this.amount);
@@ -296,7 +311,9 @@ RESOURCES
     o.Resource.prototype.info = function(){
         var s = '<h3>';
         s += this.name.charAt(0).toUpperCase() + this.name.slice(1);
-        s += '</h3>';
+        s += '</h3><p>';
+        s += this.desc;
+        s += '</p>';
         if(this.children.length > 0){
             s += '<ul>';
             for(var i in this.children){
@@ -374,6 +391,7 @@ BUILDINGS AND UNITS
         this.unlocked = 0;
         this.show = 0;
         this.efficiency = 1;
+        this.multiplier = 1;
         this.staffed = 0;
         
         for (var i in obj) this[i] = obj[i];
@@ -390,7 +408,7 @@ BUILDINGS AND UNITS
         this.element.container.appendChild(this.element.name);
         this.element.icon = doc.createElement('div');
         this.element.icon.className = 'icon';
-        this.element.icon.style.backgroundPosition = (this.icon[0]*64) + 'px ' + (this.icon[1]*64) + 'px';
+        this.element.icon.style.backgroundPosition = (this.icon[0]*128) + 'px ' + (this.icon[1]*128) + 'px';
         this.element.container.appendChild(this.element.icon);
         this.element.desc = doc.createElement('p');
         this.element.desc.textContent = this.desc;
@@ -522,7 +540,7 @@ BUILDINGS AND UNITS
         if(this.amount && this.gather){
             for(var i in this.gather){
                 var res = i,
-                    chance = this.gather[i] * this.amount * this.efficiency * dt,     //the gather number should be x per second
+                    chance = this.gather[i] * this.amount * this.multiplier * dt,     //the gather number should be x per second
                     pool = o.resGet(res);
                     
                     if(pool.length > 0){
@@ -571,7 +589,11 @@ BUILDINGS AND UNITS
             if(count < 0) count = 0;
             for(var i in this.upkeep){ o.resByName[i].spend(this.upkeep[i] * count * dt); }
             if(count != this.amount){
-                this.die(this.amount - count);
+                if(this.recycled){
+                    this.sell(this.amount - count)
+                }else{
+                    this.die(this.amount - count);
+                }
             }
         }
         if(this.amount && this.enroll){
@@ -753,10 +775,12 @@ TECHNOLOGY
             else{ this.element.container.classList.add('unaffordable'); }
         }
         var html = '';
-        for(var i in this.cost){
-            html += '<li';
-            if(this.cost[i] > o.resByName[i].amount) html += ' class=insufficient ';
-            html += '>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
+        if(this.amount == 0){
+            for(var i in this.cost){
+                html += '<li';
+                if(this.cost[i] > o.resByName[i].amount) html += ' class=insufficient ';
+                html += '>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
+            }
         }
         this.element.cost.innerHTML = html;
     }
@@ -836,6 +860,10 @@ HELPER FUNCTIONS
         var t = o.Modal.buttonEffects[e.target.dataset.id];
         if(t) t();
         o.Modal.close();
+    }
+    function clickEdit(e){
+        var t = o.resByName[e.target.dataset.id];
+        t.edit();
     }
     
     function classDelay(element,tag,delay){

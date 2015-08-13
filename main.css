@@ -32,6 +32,13 @@ ul {
     background-repeat: no-repeat;
     background-size: auto 100% !important;
 }
+.icon.edit-button {
+    background: url(sprite.png) 128px 0;
+    float: right;
+    height: 1em;
+    margin: 0.25em;
+    width: 1em;
+}
 
 .main-container {
     height: 100%;
