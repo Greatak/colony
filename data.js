@@ -164,10 +164,6 @@ function loadData(){
         'types': ['imported-animal']
     });
     new Colony.Resource({
-        'name':'hydrocarbon',
-        'parent':'fuel'
-    });
-    new Colony.Resource({
         'name':'iron'
     });
     new Colony.Resource({
@@ -361,7 +357,7 @@ function loadData(){
             'materials':50
         },
         'gather':{
-            'hydrocarbon':0.5
+            'fuel':0.5
         },
         'desc':'Extracts fuel to vital to expand the colony'
     });
@@ -387,7 +383,8 @@ function loadData(){
         'name':'simplehouse',
         'displayName':'Small Dwelling',
         'use':{
-            'structure':1
+            'structure':1,
+            'energy':5
         },
         'cost':{
             'bush':100,
@@ -396,6 +393,26 @@ function loadData(){
         'provide':{
             'housing':8
         }
+    });
+    new Colony.Building({
+        'name':'refinery',
+        'use':{
+            'structure':5,
+            'energy':15
+        },
+        'cost':{
+            'materials':120,
+        },
+        'convert':[{
+            'from':{'rock':20},
+            'to':{ 
+                [Colony.story.mineralOrder[0]] : 9,
+                [Colony.story.mineralOrder[1]] : 7,
+                [Colony.story.mineralOrder[2]] : 4,
+                [Colony.story.mineralOrder[3]] : 3
+            },
+            'every':10
+        }]
     });
 
 //TECHNOLOGY    
@@ -414,7 +431,7 @@ function loadData(){
         };
     }
     function AddMult(res,n){
-        var r = Colony.resByName[res];
+        var r = Colony.resByName[res]||Colony.buildsByName[res];
         if(!r)return;
         return function(){ r.multiplier *= n; };
     }
@@ -430,6 +447,12 @@ function loadData(){
     }
     function Log(message,flag){
         return function(){ Colony.log(message,flag); };
+    }
+    function AddUpkeep(build,res,amount){
+        var b = Colony.buildsByName[build],
+            r = Colony.resByName[res];
+        if(!r || !b)return;
+        return function(){ b.upkeep[res] = amount; }
     }
 
     new Colony.Tech({
@@ -516,7 +539,8 @@ function loadData(){
         'effects':[
             SetMult('ferae',1),
             SetMult('bovid',1),
-            SetGroup('bovid','food')
+            SetGroup('bovid','food'),
+            SetGroup('ferae','food')
         ],
         'unlock':['domestication','husbandry','taxonomy']
     });
@@ -569,7 +593,85 @@ function loadData(){
             AddMult('rock',1.1),
             Log('Extensive mapping has reveal rich deposits nearby')
         ],
-        'unlock':['foundations','fuel extraction']
+        'unlock':['foundations','fuel extraction','mineadmin']
+    });
+    new Colony.Tech({
+        'name':'mineadmin',
+        'displayName':'Mining Administration',
+        'req':{
+            'miner':10
+        },
+        'cost':{
+            'rock': 40,
+            'data': 30
+        },
+        'desc':"Systematic oversight will improve mining yields and open new areas of study",
+        'effects':[
+            AddMult('miner',1.3)
+        ],
+        'unlock':['openpit','shaftdevelopment','orewarehouse']
+    });
+    new Colony.Tech({
+        'name':'orewarehouse',
+        'displayName': 'Mining Admin Depot',
+        'req':{
+            'miner':20
+        },
+        'cost':{
+            'materials':100,
+            'bush':50
+        },
+        'effects':[
+            AddMult('miner',1.1)
+        ],
+        'desc':"We should construct a central warehouse and processing facility to improve coordination",
+        'unlock':['metallurgy']
+    });
+    new Colony.Tech({
+        'name':'metallurgy',
+        'displayName':'Refining Facilities',
+        'cost':{
+            'rock':140,
+            'fuel':40,
+            'data':50
+        },
+        'desc':"Raw ore has little value off-world and refined materials will be more efficient to build with.",
+        'effects':[
+            SetGroup('aluminium','materials'),
+            SetGroup('iron','materials'),
+            SetGroup('copper','materials'),
+            SetGroup('zinc','materials'),
+        ],
+        'unlock':['refinery']
+    });
+    new Colony.Tech({
+        'name':'openpit',
+        'displayName':'Strip Mine',
+        'req':{
+            'methplant':1
+        },
+        'cost':{
+            'materials':150
+        },
+        'effects':[
+            AddMult('miner',1.7),
+            AddUpkeep('miner','fuel',2)
+        ],
+        'desc':"Massive pit mining will greatly improve yields, but miners will require quite a bit of fuel"
+    });
+    new Colony.Tech({
+        'name':'shaftdevelopment',
+        'displayName': 'Mine Shaft Development',
+        'req':{
+            'miner':30
+        },
+        'cost':{
+            'materials':100
+        },
+        'effects':[
+            AddMult('soil',1.2)
+        ],
+        'desc':"Preparation will improve long-term success of mines"
     });
     new Colony.Tech({
         'name':'foundations',
@@ -603,7 +705,12 @@ function loadData(){
         'cost':{
             'fuel':50,
             'data':25
-        }
+        },
+        'effects':[
+            AddMult('methane well',2)
+        ],
+        'unlock':['rocketry'],
+        'desc':"We can fit our methane wells with equipment to produce pure hydrogen for rocket fuel."
     });
     new Colony.Tech({
         'name':'construction',

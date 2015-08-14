@@ -33,7 +33,7 @@ ul {
     background-size: auto 100% !important;
 }
 .icon.edit-button {
-    background: url(sprite.png) 128px 0;
+    background: url(sprite.png) -16px 0;
     float: right;
     height: 1em;
     margin: 0.25em;
@@ -132,11 +132,11 @@ ul {
 .primary .icon {
     background: url('sprite.png');
     font-weight: 700;
-    height: 100%;
-    left: 0;
+    height: 80%;
+    left: 10%;
     position: absolute;
     top: 0;
-    width: 100%;
+    width: 80%;
 }
 .secondary {
     border-top: solid 1px #fff;

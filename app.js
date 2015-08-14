@@ -214,7 +214,7 @@ RESOURCES
         this.element.container.className = 'resource';
         this.element.icon = doc.createElement('div');
         this.element.icon.className = 'icon';
-        this.element.icon.style.backgroundPosition = (this.icon[0]*-80) + 'px ' + (this.icon[1]*128) + 'px';
+        this.element.icon.style.backgroundPosition = (this.icon[0]*-64) + 'px ' + (this.icon[1]*64) + 'px';
         this.element.container.appendChild(this.element.icon);
         this.element.name = doc.createElement('h3');
         this.element.name.textContent = this.displayName;
@@ -632,6 +632,7 @@ TECHNOLOGY
 		if (!this.displayName) this.displayName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
         
         this.amount = obj.startAmount || 0;
+        if(this.req.length != 0) this.show = 0;
         
         this.element = {};
         this.element.container = doc.createElement('li');
@@ -684,6 +685,18 @@ TECHNOLOGY
                     for(var j in all) total += all[j].amount;
                     if(total < this.req[i]*amt) return 0;            
             }else if(!t || (t.usable && ((t.amount - t.used) < (this.req[i] * amt))) || t.amount < (this.req[i] * amt)) return 0;
+        }
+        return 1;
+    }
+    o.Tech.prototype.requirements = function(){
+        for(var i in this.req){
+            var t = o.resByName[i] || o.buildsByName[i] || o.techsByName[i];
+            if(!t && o.resByType[i]){
+                var total = 0,
+                    all = o.resByType[i];
+                    for(var j in all) total += all[j].amount;
+                    if(total < this.req[i]) return 0;            
+            }else if(!t || (t.usable && ((t.amount - t.used) < (this.req[i]))) || t.amount < (this.req[i])) return 0;
         }
         return 1;
     }
@@ -768,7 +781,7 @@ TECHNOLOGY
         this.amount -= amt;
     }
     o.Tech.prototype.update = function(){
-        if(this.unlocked && !this.show && this.afford())this.show = 1;
+        if(this.unlocked && !this.show && this.requirements())this.show = 1;
         if(this.show && this.unlocked){
             this.element.container.classList.remove('hide');
         }else{
