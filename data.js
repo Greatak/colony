@@ -141,6 +141,7 @@ function loadData(){
     });
     new Colony.Resource({
         'name':'soil',
+        'multiplier':2,
         'types' : ['basic-earth']
     });
     new Colony.Resource({
