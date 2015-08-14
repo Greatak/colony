@@ -540,7 +540,7 @@ BUILDINGS AND UNITS
         else{ this.element.buy.classList.add('unaffordable'); }
         if(this.amount){ this.element.sell.classList.remove('unaffordable'); }
         else{ this.element.sell.classList.add('unaffordable'); }
-        if(this.unlocked && this.requirments()) this.show = 1;
+        if(this.unlocked && this.requirements()) this.show = 1;
         if(this.show){
             this.element.container.classList.remove('hide');
         }else{
