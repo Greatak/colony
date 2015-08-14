@@ -498,7 +498,10 @@ BUILDINGS AND UNITS
     o.Building.prototype.sell = function(amt){
         amt = amt || 1;
         if(!this.amount) return;
-        for(var i in this.cost) o.resByName[i].earn(this.cost[i]*amt);
+        for(var i in this.cost){
+            this.cost[i] = Math.floor(this.cost[i] * Math.pow(1.1,-amt));
+            o.resByName[i].earn(this.cost[i]*amt);
+        }
         for(var i in this.use) o.resByName[i].used -= (this.use[i]*amt);
         for(var i in this.provide) o.resByName[i].spend(this.provide[i]*amt);
         this.amount -= amt;
