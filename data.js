@@ -247,7 +247,7 @@ function loadData(){
             'population' : 1
         },
         'gather':{
-            'data': 0.05
+            'data': 0.1
         },
         'upkeep':{
             'food':0.05
