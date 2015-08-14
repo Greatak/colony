@@ -468,6 +468,18 @@ BUILDINGS AND UNITS
         }
         return 1;
     }
+    o.Building.prototype.requirements = function(){
+        for(var i in this.req){
+            var t = o.resByName[i] || o.buildsByName[i] || o.techsByName[i];
+            if(!t && o.resByType[i]){
+                var total = 0,
+                    all = o.resByType[i];
+                    for(var j in all) total += all[j].amount;
+                    if(total < this.req[i]) return 0;            
+            }else if(!t || (t.usable && ((t.amount - t.used) < (this.req[i]))) || t.amount < (this.req[i])) return 0;
+        }
+        return 1;
+    }
     o.Building.prototype.buy = function(amt){
         amt = amt || 1;
         if(!this.afford(amt)) return;
@@ -528,7 +540,7 @@ BUILDINGS AND UNITS
         else{ this.element.buy.classList.add('unaffordable'); }
         if(this.amount){ this.element.sell.classList.remove('unaffordable'); }
         else{ this.element.sell.classList.add('unaffordable'); }
-        if(this.unlocked) this.show = 1;
+        if(this.unlocked && this.requirments()) this.show = 1;
         if(this.show){
             this.element.container.classList.remove('hide');
         }else{
