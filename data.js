@@ -53,7 +53,7 @@ function loadData(){
             if(this.amount == 0){
                 Colony.modal(
                     'Calamity!',
-                    "Not every expedition is successful, but they should always teach us something. Maybe it's worth another go? Early colony efforts generally require a quartermaster to keep the team supplied.",
+                    "Not every expedition is successful, but they should always teach us something. Maybe it's worth another go? Early colony efforts generally require a quartermaster to keep everyone fed, but he will need some progress to report back to your investors.",
                     [{'text':'Try Again','effect':function(){ Colony.wipeSave(); location.reload(); }}]
                 )
             }
