@@ -752,8 +752,6 @@ EVENTS
         for(var i in obj){ this[i] = obj[i]; }
         //no display name? use the internal one
         this.displayName = this.displayName || this.name[0].toUpperCase() + this.name.slice(1);
-        //for tickers, we need a name to avoid clutter in the ticker list
-        if(this.ticker) this.content.name = this.name;
         
         o.eventsByName[this.name] = this;
         o.events.push(this);
@@ -804,13 +802,21 @@ EVENTS
     }
     //if it wins, what do we do?
     o.Event.prototype.go = function(){
+        //if content is dynamic, generate it
+        if(typeof this.content == 'function'){
+            var c = this.content();
+        }else{
+            var c = this.content;
+        }
+        if(this.ticker) c.name = this.name;
+    
         //if it's modal, pause event system and open the window
         if(this.modal){
             eventWaiting = 1;
-            openModal(this.displayName,this.content,this.buttons);
+            openModal(this.displayName,c,this.buttons);
         //otherwise, just insert to the queue
         }else if(this.ticker){
-            insertMessage(this.content);
+            insertMessage(c);
         }
         //if it should only ever happen once, drop the chance to 0 so it always fails the test
         if(this.once) this.chance = 0;
