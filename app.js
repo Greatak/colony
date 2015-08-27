@@ -47,9 +47,9 @@ INITIALIZATION
     function firstTime(){
         var letters = [['D','S','K'],['SP','EG','VQ'],['a','b','c','d','e']];
             o.story.originalPlanetName = choose(letters[0])+choose(letters[1])+'-'+(Math.ceil(Math.random()*700))+choose(letters[2]);
-        insertMessage({'text':'Colonists arrive at ' + o.story.originalPlanetName});
-        insertMessage({'text':'Investors eager to hear results of planetary survey'});
-        insertMessage({'text':'Good year for colony groundbreaking, analysts say'});
+        insertMessage({'name':'start1','text':'Colonists arrive at ' + o.story.originalPlanetName});
+        insertMessage({'name':'start2','text':'Investors eager to hear results of planetary survey'});
+        insertMessage({'name':'start3','text':'Good year for colony groundbreaking, analysts say'});
     }
     
 /*/////////////////////////////////////////////////////////
@@ -139,7 +139,9 @@ MONEY PRETTINESS
 TICKER TAPE
 /////////////////////////////////////////////////////////*/
 
+    //todo: message log
     var tapeMessages = [],                      //queued messages
+        tapeNames = [],                         //names so we don't double up
         specialMessages = [],                   //priority queue, not used because it's acting weird
         visibleMessages = [],                   //messages actually scrolling right now
         tapePosition = 0,                       //where in the queue are we? not used
@@ -152,6 +154,7 @@ TICKER TAPE
     
     //possibly irresponsible class-making
     function TapeMessage(obj){
+        if(tapeNames.indexOf(obj.name) != -1) return;
         //by default, don't repeat
         this.repeat = 0;
         
@@ -168,6 +171,7 @@ TICKER TAPE
         this.signaled = false;                  //once it is fully displayed, it can call for the next message
         
         tapeMessages.push(this);
+        tapeNames.push(this.name);
         if(tapeMessages.length > 50) tapeMessages.shift();
     }
     //just scrolling logic
@@ -245,6 +249,7 @@ TICKER TAPE
 ECONOMY
 /////////////////////////////////////////////////////////*/
 
+    //todo: commodity market
     var cashMoney = 0,      //current funds
         allTimeMoney = 0,   //cummulative money
         growthRate = 1.1;   //default building cost increase
