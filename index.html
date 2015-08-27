@@ -5,67 +5,46 @@
     <title>Colony!</title>
     <link href='http://fonts.googleapis.com/css?family=Ubuntu:400,700' rel='stylesheet' type='text/css'>
     <link rel=stylesheet href="main.css">
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-      ga('create', 'UA-66329022-1', 'auto');
-      ga('send', 'pageview');
-
-    </script>
 </HEAD>
 <BODY>
     <div class=main-container>
-        <div class=left>
-            <div class="resources glass">
-                <h2>Resources</h2>
-                <div class=resource-list-box>
-                    <ul class="resource-list primary"></ul>
-                    <ul class="resource-list secondary"></ul>
-                </div>
-            </div>
-            <div class="log glass">
-                <h2>History</h2>
-                <ul class=log-list></ul>
-            </div>
+        <div class=topbar>
+            <button class=top-tech-button onClick="Colony.wipeSave()">Wipe Save</button>
+            <div class=menu-button>Menu</div>
+            <div class=money-box>$money</div>
+            <div class=persecond>7</div>
+            <div class=sexy-line></div>
         </div>
-        <div class=middle>
-            <div class=status>
-                <div class=top-bar>
-                    <div class=date></div>
-                </div>
+        <div class=gamespace>
+            <div class=ticker></div>
+            <div class=planetspace>
+                <button class=survey-button>Launch Survey</button>
+                <div class=survey-box><div class=survey-thing></div></div>
+                <div class=survey-box><div class=survey-thing></div></div>
+                <div class=survey-box><div class=survey-thing></div></div>
+                <div class=survey-box><div class=survey-thing></div></div>
+                <div class=survey-box><div class=survey-thing></div></div>
             </div>
-            <div class="tech glass">
-                <h2>Research and Infrastructure</h2>
-                <div class=tech-list-box>
-                    <ul class=tech-list></ul>
-                    <ul class=tech-list-bought></ul>
-                </div>
+            <div class=menuspace>
+                <nav class=tabs>
+                    <div class="build tab active" data-id="buildings">Facilities</div>
+                    <div class="tech tab hide" data-id="technology">Development<span class="notification hide"></span></div>
+                </nav>
+                <ul class="build list active"></ul>
+                <ul class="tech list"></ul>
+                <div class=list-ad></div>
             </div>
-        </div>
-        <div class=right>
-            <div class="build glass">
-                <h2>Facilities and Staff</h2>
-                <ul class=build-list></ul>
+            <div class=modal>
+                <h1>Test!</h1>
+                <div class=content></div>
+                <div class=modal-buttons>
+                    <button data-id=0>Hi</button>
+                    <button data-id=1>Hi</button>
+                    <button data-id=2>Hi</button>
+                </div>
             </div>
         </div>
     </div>
-    <div class=modal>
-        <h1>Test heading</h1>
-        <div class=modal-content>
-            <p>Text to fill up this space to make a bit of a sentence and stuff sothat I get a feel for how big this area will be?</p>
-            <input type=text class=text-box>
-            <div class=input-box>
-                <input type=submit value=Okay! class=button data-id=0>
-                <input type=submit value=Nope! class=button data-id=1>
-                <input type=submit value=Nope! class=button data-id=2>
-            </div>
-        </div>
-    </div>
-    <div class=tooltip></div>
-    <p class=saved>Saved</p>
     <script src="app.js"></script>
     <script src="data.js"></script>
 </BODY>

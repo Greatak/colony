@@ -1,820 +1,617 @@
 var Colony = function(win,doc,undefined){
     var o = {};
     
+    o.version = 0.01;
+    
 /*/////////////////////////////////////////////////////////
 INITIALIZATION
 /////////////////////////////////////////////////////////*/
-    o.version = 0.04;
-    //Let's grab all the DOM elements
-    o.elements = {};
-    o.elements.resources = doc.querySelector('.resources');
-    o.elements.resourceListPrimary = doc.querySelector('.resource-list.primary');
-    o.elements.resourceListSecondary = doc.querySelector('.resource-list.secondary');
-    o.elements.log = doc.querySelector('.log');
-    o.elements.logList = doc.querySelector('.log-list');
-    o.elements.build = doc.querySelector('.build');
-    o.elements.buildList = doc.querySelector('.build-list');
-    o.elements.tech = doc.querySelector('.tech');
-    o.elements.techList = doc.querySelector('.tech-list');
-    o.elements.techListBought = doc.querySelector('.tech-list-bought');
-    o.elements.modal = doc.querySelector('.modal');
-    o.elements.modalTitle = doc.querySelector('.modal h1');
-    o.elements.modalContent = doc.querySelector('.modal-content p');
-    o.elements.modalInput = doc.querySelector('.modal-content .text-box');
-    o.elements.modalButtons = doc.querySelectorAll('.modal .button');
-    o.elements.date = doc.querySelector('.date');
-    o.elements.tooltip = doc.querySelector('.tooltip');
-    o.elements.saved = doc.querySelector('.saved');
+    var $ = function(s){return doc.querySelectorAll(s);};
+    o.tickerTape = $('.ticker')[0];
+    o.moneyBar = $('.money-box')[0];
+    o.perSecond = $('.persecond')[0];
+    o.planetSpace = $('.planetspace')[0];
+    o.surveyButton = $('.survey-button')[0];
+    o.surveyBoxes = Array.prototype.slice.call($('.survey-box'));
+    o.tabs = Array.prototype.slice.call($('.tab'));
+    o.techTab = o.tabs[1];
+    o.techNote = $('.tab.tech .notification')[0]
+    o.buildingList = $('.build.list')[0];
+    o.technologyList = $('.tech.list')[0];
+    o.modal = $('.modal')[0];
+    o.modalTitle = $('.modal h1')[0];
+    o.modalContent = $('.modal .content')[0];
+    o.modalButtons = Array.prototype.slice.call($('.modal button'));
     
-    for(var i = o.elements.modalButtons.length;i--;){o.elements.modalButtons[i].addEventListener('click',clickModal);}
+    var currencySign = '₰',
+        paused = false,
+        techHidden = true,
+        newTechs = 0;
     
     o.story = {};
-    o.story.res = {};
     
-    var paused = false;
-    
-    //Initialization stuff, this gets called after data.js loads
     function init(){
-        o.loadStory();
-        if(!o.story.mineralOrder){
-            o.story.mineralOrder = choose([
-                ['iron','aluminum','zinc','copper'],
-                ['iron','aluminum','copper','zinc'],
-                ['aluminum','iron','zinc','copper'],
-                ['aluminum','iron','copper','zinc']
-            ]);
-        }
-        
-        loadData();
-        if(!o.load()){
-            var letters = [['D','S','K'],['SP','EG','VQ'],['a','b','c','d','e']];
-            o.story.originalPlanetName = choose(letters[0])+choose(letters[1])+'-'+(Math.ceil(Math.random()*700))+choose(letters[2]);
-            o.log('Arriving in system with a skeleton crew of 5 eager explorers');
-            o.modal('Welcome!',
-            "Congratulations! It's been quite the journey to get to this point, but here it is: " + o.story.planetName + ". All initial surveys indicated the planet should be devoid of intelligent life but plenty of biological activity to study and maintain a breathable atmosphere. As leader of this expedition, your staff expect you to see to their safety and keep them supplied, but they understand this won't be easy. Whether this will be a successful, long-term expedition remains to be seen, but there should be plenty of resources for the Colonial Development Consortium to see some return on their investment. Speaking of investments, it might be better for recruiting if we gave this colony a snappier name.",
-            [{'text':"Let's go!",'effect':function(){
-                o.story.planetName = o.Modal.input.value;
-            }}],
-            o.story.originalPlanetName)
-        }
-        o.resConsolodate();
-        //check for saves and load them
+        if(!o.load()) firstTime();
+        nextMessage();
         requestAnimationFrame(tick);
-        setTimeout(o.save,60000);
     }
-    
+    function firstTime(){
+        var letters = [['D','S','K'],['SP','EG','VQ'],['a','b','c','d','e']];
+            o.story.originalPlanetName = choose(letters[0])+choose(letters[1])+'-'+(Math.ceil(Math.random()*700))+choose(letters[2]);
+        insertMessage({'text':'Colonists arrive at ' + o.story.originalPlanetName});
+        insertMessage({'text':'Investors eager to hear results of planetary survey'});
+        insertMessage({'text':'Good year for colony groundbreaking, analysts say'});
+    }
     
 /*/////////////////////////////////////////////////////////
 MAIN LOOP
 /////////////////////////////////////////////////////////*/
     var totalTime = 0,  //this is milliseconds
+        lastTime = 0,
         days = 0,
         oldTime = 0,
-        dt = 0,         //this is seconds
-        decaying = {};
+        dt = 0;         //this is seconds
     function tick(time){
-        //todo: random events
         requestAnimationFrame(tick);
+        lastTime = time;
         dt = (time - oldTime);
         oldTime = time;
         if(paused)return;
         totalTime += dt;
-        days = Math.floor(totalTime / 20000);
+        //days = Math.floor(totalTime / 20000);
         dt /= 1000;
         
-        o.elements.date.textContent = "Day " + days;
-        
-        decaying = {};
-        for(var i = o.res.length;i--;){
-            if(o.res[i].onTick)o.res[i].onTick(dt);
-            o.res[i].update();
-            //any resources with more used than they have, flag them
-            if(o.res[i].used > o.res[i].amount){
-                decaying[o.res[i].name] = {
-                    'decay': o.res[i].used - o.res[i].amount,
-                    'units': []
-                }
-            }
-        }
-        for(var i = o.builds.length;i--;){
-            if(o.builds[i].onTick)o.builds[i].onTick(dt);
+        updateTicker(dt);
+        updateEconomy(dt);
+        for(var i in o.builds){
             o.builds[i].update(dt);
-            //for flagged resources, add any buildings using them
-            if(o.builds[i].amount > 0){
-                for(var j in o.builds[i].use){
-                    if(decaying[j]) decaying[j].units.push(o.builds[i]);
-                }
-            }
         }
-        for(var i = o.techs.length;i--;){
-            if(o.techs[i].onTick)o.techs[i].onTick(dt);
-            o.techs[i].update();
+        for(var i in o.techs){
+            o.techs[i].update(dt);
         }
-        
-        for(var i in decaying){
-            var total = o.resByName[i].used,
-                amount = decaying[i].decay;
-                
-            for(var j in decaying[i].units){
-                var s = Math.min(decaying[i].units[j].amount,Math.min(decaying[i].decay,Math.ceil(decaying[i].decay*((decaying[i].units[j].amount*decaying[i].units[j].use[i])/total))));
-                decaying[i].units[j].die(s);
-                amount -= s;
-                if(amount <= 0) break;
-            }
-        }
+        updateEvent(dt);
     }
 
 /*/////////////////////////////////////////////////////////
-LOG AND NOTIFICATIONS
-/////////////////////////////////////////////////////////*/    
-    //post stuff to the history listing, message can be html
-    o.log = function(message, tags){
-        var e = doc.createElement('li');
-        e.innerHTML = message;
-        if(!tags) e.className = 'normal';
-        o.elements.logList.appendChild(e);
-        o.elements.logList.scrollTop = o.elements.logList.scrollHeight;
-        if(tags){classDelay(e,tags,10);}
-    }
-    o.Modal = {
-        'title': o.elements.modalTitle.textContent,
-        'content': o.elements.modalContent.innerHTML,
-        'container':o.elements.modal,
-        'buttons': o.elements.modalButtons,
-        'buttonEffects': [],
-        'input': o.elements.modalInput,
-        'open':function(){ paused = true; o.Modal.container.classList.add('open'); },
-        'close':function(){ paused = false; o.Modal.container.classList.remove('open'); }
-    }
-    o.modal = function(title,content,buttons,textBox){
-        o.elements.modalTitle.textContent = title;
-        o.elements.modalContent.innerHTML = content;
-        for(var i = 0; i < o.Modal.buttons.length; i++){
-            if(!buttons[i]){
-                o.Modal.buttons[i].style.display = 'none';
-                o.Modal.buttonEffects[i] = function(){};
-            }else{
-                o.Modal.buttons[i].style.display = 'inline-block';
-                o.Modal.buttons[i].value = buttons[i].text;
-                o.Modal.buttonEffects[i] = buttons[i].effect;
-            }
-        }
-        o.Modal.input.style.display = (textBox)?'block':'none';
-        if(typeof textBox == 'string') o.Modal.input.value = textBox;
-        o.Modal.open();
-    }
-    //o.note(message, class, postToLog)
-    //o.noteHide()
-    o.tooltip = function(e,content){
-        o.elements.tooltip.classList.add('open');
-        o.elements.tooltip.style.transform = 'translate('+e.clientX+'px,'+e.clientY+'px)';
-        o.elements.tooltip.innerHTML = content.info();
-    }
-    o.tooltipHide = function(){
-        o.elements.tooltip.classList.remove('open');
-    }
-    //o.tooltipAttach(element)
-    
-/*/////////////////////////////////////////////////////////
-RESOURCES
+MONEY PRETTINESS
 /////////////////////////////////////////////////////////*/
-    o.res = [];
-    o.resByName = [];
-    o.resByType = {};
-    o.Resource = function(obj){
-        this.used = 0;          //some stuff is used without being consumed
-        this.parent = 0;        //if this is part of a composite, who does it contribute to?
-        this.children = [];     //if this is a composite measure, what makes it?
-        this.types = [];        //categories
-        this.cat = 'secondary';
-        this.icon = [0,0];         //coords for spritesheet
-        this.desc = '';         //description for tooltip
-        this.unlocked = 0;      //can you earn it?
-        this.show = 0;        //does it show up?
-        this.multiplier = 1;    //when earned, should we change the amount?
-        this.efficiency = 1;    //when spent, should we change the amount?
-        this.editable = 0;
-        
-        for (var i in obj) this[i]=obj[i];
-        
-        this.id = o.res.length;
-        if(!o.story.res[this.name]) o.story.res[this.name] = {};
-        if(!this.displayName) this.displayName = capitalize(this.name);
-        
-        if(this.prefix){
-            if(!o.story.res[this.name].prefix)o.story.res[this.name].prefix = choose(this.prefix);
-            this.displayName = capitalize(o.story.res[this.name].prefix) + ' ' + this.displayName;
-        }
-        
-        this.amount = this.startAmount || 0;
-        this.displayAmount = Math.floor(this.amount)
-        
-        this.element = {};
-        this.element.container = doc.createElement('li');
-        this.element.container.className = 'resource';
-        this.element.icon = doc.createElement('div');
-        this.element.icon.className = 'icon';
-        this.element.icon.style.backgroundPosition = (this.icon[0]*-64) + 'px ' + (this.icon[1]*64) + 'px';
-        this.element.container.appendChild(this.element.icon);
-        this.element.name = doc.createElement('h3');
-        this.element.name.textContent = this.displayName;
-        this.element.container.appendChild(this.element.name);
-        this.element.amount = doc.createElement('p');
-        this.element.amount.textContent = (this.usable)? Math.floor(this.used) + '/' + this.displayAmount : this.disaplayAmount;
-        this.element.container.appendChild(this.element.amount);
-        if(!this.show){this.element.container.classList.add('hide');}
-        this.element.edit = doc.createElement('div');
-        this.element.edit.className = 'edit-button icon';
-        this.element.edit.addEventListener('click',clickEdit);
-        this.element.edit.dataset.id = this.name;
-        this.element.container.appendChild(this.element.edit);
-        switch(this.cat){
-            case 'primary':
-                o.elements.resourceListPrimary.appendChild(this.element.container);
-                break;
-            case 'secondary':
-                o.elements.resourceListSecondary.appendChild(this.element.container);
-                break;
-        }
-        var clicky = {'handleEvent': function(e){ o.tooltip(e,this.that); }, 'that':this }
-        this.element.container.addEventListener('mouseover',clicky);
-        this.element.container.addEventListener('mouseleave',o.tooltipHide);
-        
-        o.resByName[this.name] = this;
-        for(var i in this.types){
-            if(!o.resByType[this.types[i]]) o.resByType[this.types[i]] = [];
-            o.resByType[this.types[i]].push(this);
-        }
-        o.res.push(this);
+    function setMoneyBar(money){
+        o.moneyBar.textContent = currencySign + prettify(money);
     }
-    o.Resource.prototype.earn = function(amt){
-        if(amt){
-            if(this.children.length == 0){
-                this.amount += amt * this.multiplier;
-            }else{
-                var total = amt;
-                amt /= this.children.length;
-                amt = Math.ceil(amt);
-                for (var i in this.children){
-                    this.children[i].amount += amt * this.children[i].multiplier;
-                    total -= amt;
-                    if(total < amt) amt -= total;
-                }
-            }
-            this.needsUpdate = true;
-        }
-    }
-    o.Resource.prototype.spend = function(amt){
-        var childrenLength = 0,
-            total = amt;
-        if(amt){
-            if(this.children.length == 0){
-                this.amount -= amt * this.efficiency;
-            }else{
-                for(var i in this.children){
-                    if(this.children[i].amount > 0) childrenLength++;
-                }
-                amt /= childrenLength;
-                for (var i in this.children){
-                    if(this.children[i].amount > 0){
-                        this.children[i].amount -= amt * this.children[i].efficiency;
-                        total -= amt;
-                    }
-                    if(total < amt) amt -= total;
-                }
-            }
-            if(this.amount < 0) this.amount = 0;
-            
-            
-            if(this.onSpend)this.onSpend(amt)
-            this.needsUpdate = true;
-        }
-    }
-    o.Resource.prototype.update = function(){
-        //todo: icon fanciness
-        if(this.children.length > 0){
-            this.amount = 0;
-            for(var i in this.children){
-                this.amount += this.children[i].amount;
+    var ranges = [
+        { divider: 1e33 , suffix: 'Dc' },
+        { divider: 1e30 , suffix: 'No' },
+        { divider: 1e27 , suffix: 'Oc' },
+        { divider: 1e24 , suffix: 'Sp' },
+        { divider: 1e21 , suffix: 'Sx' },
+        { divider: 1e18 , suffix: 'Qi' },
+        { divider: 1e15 , suffix: 'Qu' },
+        { divider: 1e12 , suffix: 'T' },
+        { divider: 1e9 , suffix: 'B' },
+        { divider: 1e6 , suffix: 'M' },
+        { divider: 1e3 , suffix: 'k' }
+    ];
+    function prettify(n,p){
+        if(p == undefined) p = 2;
+        for (var i = 0; i < ranges.length; i++) {
+            if (n >= ranges[i].divider) {
+                return (n / ranges[i].divider).toFixed(p) + ranges[i].suffix;
             }
         }
-        this.element.name.textContent = this.displayName;
-        this.element.amount.textContent = (this.usable)? Math.floor(this.used) + '/' + this.displayAmount : this.displayAmount;
-        this.element.edit.style.display = (this.editable)?'block':'none';
+        return n.toFixed(p);
+    }
+    o.setMoneyBar = setMoneyBar;
+    
+    function setPerSecond(){
+        var m = 0;
+        for(var i in o.builds){
+            m += o.builds[i].amount * o.builds[i].multiplier * o.builds[i].earn;
+        }
+        o.perSecond.textContent = currencySign + prettify(m) + ' per second';
+    }
+    
+/*/////////////////////////////////////////////////////////
+TICKER TAPE
+/////////////////////////////////////////////////////////*/
+    var tapeMessages = [],
+        specialMessages = [],
+        visibleMessages = [],
+        tapePosition = 0,
+        tickerSize = o.tickerTape.clientWidth,
+        tickerSpeed = 80,
+        needsMessage = false;
         
-        if(this.amount < 0) this.amount = 0;
-        this.displayAmount = Math.floor(this.amount);
-        if(!this.meta && this.displayAmount) this.show = 1;
-        if(this.show){
-            this.element.container.classList.remove('hide');
+    o.tapeMessages = tapeMessages;
+    o.visibleMessages = visibleMessages;
+        
+    function TapeMessage(obj){
+        this.repeat = 0;
+        for(var i in obj){ this[i] = obj[i]; }
+        
+        this.element = document.createElement('p');
+        this.element.innerHTML = this.text || '';
+        this.element.className = this.classes || '';
+        
+        this.pos = 0;
+        this.size = this.element.clientWidth;
+        this.signaled = false;
+        
+        tapeMessages.push(this);
+        if(tapeMessages.length > 50) tapeMessages.shift();
+    }
+    TapeMessage.prototype.update = function(dt){
+        this.pos -= tickerSpeed * dt;
+        this.element.style.transform = 'translateX(' + this.pos + 'px)';
+        if(!this.signaled && this.pos <= tickerSize-this.element.clientWidth){
+            this.signaled = true;
+            nextMessage();
+        }
+        if(this.pos <= -this.element.clientWidth) this.remove();
+    }
+    TapeMessage.prototype.add = function(){
+        this.signaled = false;
+        this.pos = tickerSize;
+        o.tickerTape.appendChild(this.element);
+        visibleMessages.push(this);
+        tapeMessages.splice(tapeMessages.indexOf(this),1);
+    }
+    TapeMessage.prototype.remove = function(){
+        o.tickerTape.removeChild(this.element);
+        visibleMessages.splice(visibleMessages.indexOf(this),1);
+        if(this.repeat--){
+            tapeMessages.push(this);
+        }
+    }
+    function nextMessage(){
+        if(specialMessages[0]){
+            var m = specialMessages.shift();
+            m.add();
+        }else if(tapeMessages[0]){
+            tapeMessages[0].add();
         }else{
-            this.element.container.classList.add('hide');
+            needsMessage = true;
         }
-        this.needsUpdate = false;
     }
-    o.Resource.prototype.info = function(){
-        var s = '<h3>';
-        s += this.name.charAt(0).toUpperCase() + this.name.slice(1);
-        s += '</h3><p>';
-        s += this.desc;
-        s += '</p>';
-        if(this.children.length > 0){
-            s += '<ul>';
-            for(var i in this.children){
-                s += '<li>' + this.children[i].displayName + '</li>'
-            }
-            s += '</ul>';
+    function insertMessage(obj){
+        var t = new TapeMessage(obj);
+        if(t.special) specialMessages.push(t);
+    }
+    function updateTicker(dt){
+        if(needsMessage && tapeMessages[0]){
+            tapeMessages[0].add();
+            needsMessage = false;
         }
-        return s;
-    }
-    o.Resource.prototype.rename = function(name){
-        if(!name)return;
-        o.story.res[this.name].prefix = name;
-        this.displayName = capitalize(o.story.res[this.name].prefix) + ' ' + capitalize(this.name);
-    }
-    o.Resource.prototype.edit = function(){
-        var that = this;
-        Colony.modal(
-            'Rename ' + this.displayName,
-            "",
-            [
-                {'text':'Accept','effect':function(){ that.rename(o.Modal.input.value); }},
-                {'text':'Cancel','effect':function(){ }}
-            ],
-            o.story.res[this.name].prefix
-        )
-    }
-    //returns a resource or a list of resources of a type, always an array
-    o.resGet = function(r){
-        var out = [];
-        if(o.resByType[r]){
-            out = o.resByType[r];
-        }else{
-            out.push(o.resByName[r]);
-        }
-        return out;
-    }
-    //can grab multiple types, returns deduped list, always array
-    o.resGetTypes = function(types){
-        var o = [],
-            all = [];
-        for(var i in types){
-            all.concat(o.resByType[types[i]]);
-        }
-        for(var i in all){
-            if(o.indexOf(all[i]) == -1) o.push(all[i]);
-        }
-        return o;
-    }
-    //generates the children list for composite resources
-    o.resConsolodate = function(){
-        for(var i in o.res){
-            o.res[i].children = [];
-        }
-        for(var i in o.res){
-            if(o.res[i].parent){
-                o.resByName[o.res[i].parent].children.push(o.res[i]);
-                o.resByName[o.res[i].parent].needsUpdate = true;
-            }
+        for(var i = visibleMessages.length;i--;){
+            visibleMessages[i].update(dt);
         }
     }
     
 /*/////////////////////////////////////////////////////////
-BUILDINGS AND UNITS
+ECONOMY
+/////////////////////////////////////////////////////////*/
+    var cashMoney = 0,
+        allTimeMoney = 0,
+        growthRate = 1.1;
+    
+    function updateEconomy(dt){
+        cashMoney = Math.max(cashMoney,0);
+        setMoneyBar(cashMoney);
+        setPerSecond();
+    }
+    function earnMoney(amt,mult){
+        amt = amt || 0;
+        if(mult) amt *= cashMoney;
+        cashMoney += amt;
+        if(amt > 0) allTimeMoney += amt;
+    }
+    o.earnMoney = earnMoney;
+    
+    var clickCount = 0,
+        surveyTimers = [],
+        surveyRotations = [30,60,90,120,180,-30,-60,-90,-120];
+    o.surveyBoxes[0].style.transform = 'rotate(40deg)';
+    o.surveyBoxes[1].style.transform = 'rotate(-80deg)';
+    o.surveyBoxes[2].style.transform = 'rotate(120deg)';
+    function surveyClick(){
+        clickCount++;
+        if(clickCount == 20) o.surveyButton.style.opacity = 0;
+        earnMoney(1);
+        if(!surveyTimers[0]){
+            o.surveyBoxes[0].style.transform = 'rotate(' + choose(surveyRotations) + 'deg)';
+            o.surveyBoxes[0].classList.add('orbit');
+            surveyTimers[0] = setTimeout(function(){
+                surveyTimers[0] = 0;
+                o.surveyBoxes[0].classList.remove('orbit');
+            },1000);
+        }else if(!surveyTimers[1]){
+            o.surveyBoxes[1].style.transform = 'rotate(' + choose(surveyRotations) + 'deg)';
+            o.surveyBoxes[1].classList.add('orbit');
+            surveyTimers[1] = setTimeout(function(){
+                surveyTimers[1] = 0;
+                o.surveyBoxes[1].classList.remove('orbit');
+            },1000);
+        }else if(!surveyTimers[2]){
+            o.surveyBoxes[2].style.transform = 'rotate(' + choose(surveyRotations) + 'deg)';
+            o.surveyBoxes[2].classList.add('orbit');
+            surveyTimers[2] = setTimeout(function(){
+                surveyTimers[2] = 0;
+                o.surveyBoxes[2].classList.remove('orbit');
+            },1000);
+        }else if(!surveyTimers[3]){
+            o.surveyBoxes[3].style.transform = 'rotate(' + choose(surveyRotations) + 'deg)';
+            o.surveyBoxes[3].classList.add('orbit');
+            surveyTimers[3] = setTimeout(function(){
+                surveyTimers[3] = 0;
+                o.surveyBoxes[3].classList.remove('orbit');
+            },1000);
+        }else if(!surveyTimers[4]){
+            o.surveyBoxes[4].style.transform = 'rotate(' + choose(surveyRotations) + 'deg)';
+            o.surveyBoxes[4].classList.add('orbit');
+            surveyTimers[4] = setTimeout(function(){
+                surveyTimers[4] = 0;
+                o.surveyBoxes[4].classList.remove('orbit');
+            },1000);
+        }
+    }
+    o.planetSpace.addEventListener('click',surveyClick);
+/*/////////////////////////////////////////////////////////
+BUILDINGS
 /////////////////////////////////////////////////////////*/
     o.builds = [];
     o.buildsByName = [];
     o.Building = function(obj){
-        this.cost = {};
-        this.use = {};
-        this.req = {};
-        this.provide = {};
-        this.enroll = {};
-        this.icon = [0,0];
-        this.desc = '';
         this.unlocked = 0;
         this.show = 0;
-        this.efficiency = 1;
+        this.amount = 0;
+        this.totalAmount = 0;
+        this.growth = growthRate;
+        this.icon = [0,0];
+        this.cost = 0;
+        this.earn = 0;
         this.multiplier = 1;
-        this.staffed = 0;
+        this.desc = '';
         
-        for (var i in obj) this[i] = obj[i];
-		this.id = o.builds.length;
-		if (!this.displayName) this.displayName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
+        for(var i in obj){ this[i] = obj[i]; }
         
-        this.amount = obj.startAmount || 0;
+        this.currentCost = this.cost;
+        this.displayName = this.displayName || this.name[0].toUpperCase() + this.name.slice(1);
         
         this.element = {};
         this.element.container = doc.createElement('li');
         this.element.container.className = 'building';
-        this.element.name = doc.createElement('h3');
-        this.element.name.textContent = this.displayName;
-        this.element.container.appendChild(this.element.name);
         this.element.icon = doc.createElement('div');
         this.element.icon.className = 'icon';
-        this.element.icon.style.backgroundPosition = (this.icon[0]*128) + 'px ' + (this.icon[1]*128) + 'px';
+        this.element.icon.style.backgroundPosition = (this.icon[0]*-64) + 'px ' + (this.icon[1]*64) + 'px';
         this.element.container.appendChild(this.element.icon);
-        this.element.desc = doc.createElement('p');
-        this.element.desc.textContent = this.desc;
-        this.element.container.appendChild(this.element.desc);
         this.element.amount = doc.createElement('p');
         this.element.amount.textContent = Math.floor(this.amount);
         this.element.icon.appendChild(this.element.amount);
+        if(!this.bad){
+            this.element.sell = doc.createElement('div');
+            this.element.sell.className = 'sell-button';
+            this.element.sell.dataset.id = this.name;
+            this.element.sell.addEventListener('click',clickSell);
+            this.element.icon.appendChild(this.element.sell);
+        }
         this.element.buy = doc.createElement('div');
         this.element.buy.className = 'buy-button';
         this.element.buy.dataset.id = this.name;
         this.element.buy.addEventListener('click',clickBuy);
         this.element.icon.appendChild(this.element.buy);
-        this.element.sell = doc.createElement('div');
-        this.element.sell.className = 'sell-button';
-        this.element.sell.dataset.id = this.name;
-        this.element.sell.addEventListener('click',clickSell);
-        this.element.icon.appendChild(this.element.sell);
+        this.element.title = doc.createElement('h2');
+        this.element.title.textContent = this.displayName;
+        this.element.container.appendChild(this.element.title);
+        this.element.desc = doc.createElement('p');
+        this.element.desc.textContent = this.desc;
+        this.element.container.appendChild(this.element.desc);
         this.element.cost = doc.createElement('ul');
-        this.element.cost.className = 'cost-list';
+        this.element.cost.className = 'cost';
         var html = '';
-        for(var i in this.cost){
-            html += '<li>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
+        html += '<li>' + currencySign + prettify(this.currentCost) + '</li>';
+        if(this.otherCost){
+            for(var i in this.otherCost){
+                html += '<li>' + this.otherCost[i] + ' ' + o.buildsByName[i].displayName + '</li>';
+            }
         }
         this.element.cost.innerHTML = html;
         this.element.container.appendChild(this.element.cost);
-        this.element.use = doc.createElement('ul');
-        this.element.use.className = 'use-list';
-        var html = '';
-        for(var i in this.use){
-            html += '<li>' + this.use[i] + ' ' + o.resByName[i].name + '</li>';
-        }
-        this.element.use.innerHTML = html;
-        this.element.container.appendChild(this.element.use);
-        if(!this.show){this.element.container.classList.add('hide');}
-        o.elements.buildList.appendChild(this.element.container);
-        this.needsUpdate = false;
+        o.buildingList.appendChild(this.element.container);
+        
         
         o.buildsByName[this.name] = this;
         o.builds.push(this);
     }
-    o.Building.prototype.afford = function(amt){
-        amt = amt || 1;
-        for(var i in this.cost) if(o.resByName[i].amount < (this.cost[i]*amt)) return 0;
-        for(var i in this.use) if((o.resByName[i].amount - o.resByName[i].used) < (this.use[i]*amt)) return 0;
-        for(var i in this.req){
-            var t = o.resByName[i] || o.buildsByName[i] || o.techsByName[i];
-            if(!t && o.resByType[i]){
-                var total = 0,
-                    all = o.resByType[i];
-                    for(var j in all) total += all[j].amount;
-                    if(total < this.req[i]*amt) return 0;            
-            }else if(!t || (t.usable && ((t.amount - t.used) < (this.req[i] * amt))) || t.amount < (this.req[i] * amt)) return 0;
-        }
-        return 1;
-    }
-    o.Building.prototype.requirements = function(){
-        for(var i in this.req){
-            var t = o.resByName[i] || o.buildsByName[i] || o.techsByName[i];
-            if(!t && o.resByType[i]){
-                var total = 0,
-                    all = o.resByType[i];
-                    for(var j in all) total += all[j].amount;
-                    if(total < this.req[i]) return 0;            
-            }else if(!t || (t.usable && ((t.amount - t.used) < (this.req[i]))) || t.amount < (this.req[i])) return 0;
-        }
-        return 1;
-    }
-    o.Building.prototype.buy = function(amt){
-        amt = amt || 1;
-        if(!this.afford(amt)) return;
-        for(var i in this.cost) o.resByName[i].spend(this.cost[i]*amt);
-        for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].earn(this.provide[i]*amt);
-        this.amount += amt;
-        this.needsUpdate = true;
-        this.element.amount.classList.add('bounce');
-        classDelay(this.element.amount, 'bounce', 30);
-        if(!this.staffed){
-            for(var i in this.cost){
-                this.cost[i] = Math.floor(this.cost[i] * Math.pow(1.1,amt));
-            }
-        }
-        if(this.onBuy) this.onBuy(amt);
-    }
-    o.Building.prototype.forceBuy = function(amt){
-        if(!amt) return;
-        for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
-        this.amount += amt;
-        if(!this.staffed){
-            for(var i in this.cost){
-                this.cost[i] = Math.floor(this.cost[i] * Math.pow(1.1,amt));
-            }
-        }
-    }
-    o.Building.prototype.sell = function(amt){
-        amt = amt || 1;
-        if(!this.amount) return;
-        for(var i in this.cost){
-            this.cost[i] = Math.floor(this.cost[i] * Math.pow(1.1,-amt));
-            o.resByName[i].earn(this.cost[i]*amt);
-        }
-        for(var i in this.use) o.resByName[i].used -= (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].spend(this.provide[i]*amt);
-        this.amount -= amt;
-        this.needsUpdate = true;
-        this.element.amount.classList.add('fallover');
-        classDelay(this.element.amount, 'fallover', 100);
-        if(this.onSell) this.onSell(amt);
-    }
-    o.Building.prototype.die = function(amt){
-        //like selling, but no return on resources
-        amt = amt || 1;
-        if(!this.amount) return;
-        
-        for(var i in this.use) o.resByName[i].used -= (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].spend(this.cost[i]*amt);
-        this.amount -= amt;
-        if(this.onDie) this.onDie(amt);
-    }
     o.Building.prototype.update = function(dt){
-        //todo: icon fanciness
-        //todo: convert to deltaTime system instead of random, decay already done
-        this.element.amount.textContent = Math.floor(this.amount);
-        if(this.afford(1) && this.unlocked){ this.element.buy.classList.remove('unaffordable'); }
-        else{ this.element.buy.classList.add('unaffordable'); }
-        if(this.amount){ this.element.sell.classList.remove('unaffordable'); }
-        else{ this.element.sell.classList.add('unaffordable'); }
-        if(this.unlocked && this.requirements()) this.show = 1;
-        if(this.show){
-            this.element.container.classList.remove('hide');
-        }else{
-            this.element.container.classList.add('hide');
-        }
+        if(this.onTick)this.onTick(dt);
+        if(!this.bad)this.element.sell.className = (this.amount <= 0)?'fade sell-button':'sell-button';
+        this.element.amount.textContent = prettify(Math.floor(this.amount),0);
+        
+        if(this.unlocked && this.afford()) this.show = 1;
+        this.element.container.className = (this.show || this.amount)?'building':'building hide';
+        if(this.bad) this.element.container.className += ' bad';
+        
         var html = '';
-        for(var i in this.cost){
-            html += '<li';
-            if(this.cost[i] > o.resByName[i].amount) html += ' class=insufficient ';
-            html += '>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
+        html += '<li' + ((this.currentCost > cashMoney)?' class=expensive>':'>');
+        html += currencySign + prettify(this.currentCost) + '</li>';
+        if(this.otherCost){
+            for(var i in this.otherCost){
+                html += '<li' + ((o.buildsByName[i].amount < this.otherCost[i])?' class=expensive>':'>'); 
+                html += this.otherCost[i] + ' ' + o.buildsByName[i].displayName + '</li>';
+            }
         }
         this.element.cost.innerHTML = html;
         
-        //loop through the different activity types it might have
-        //start with gathering
-        if(this.amount && this.gather){
-            for(var i in this.gather){
-                var res = i,
-                    chance = this.gather[i] * this.amount * this.multiplier * dt,     //the gather number should be x per second
-                    pool = o.resGet(res);
-                    
-                    if(pool.length > 0){
-                        for(var j in pool){
-                            var amount = (Math.random()+(pool[j].multiplier*(chance)));
-                            if (pool[j].cap){
-                                var cap = o.resByName[pool[j].cap].amount * (pool[j].capMult || 1);
-                                if (pool[j].amount >= cap) amount = 0;
-                            }
-                            amount = Math.floor(amount);
-                            if(amount > 0) pool[j].earn(amount);
-                        }
-                    }
-            }
-        }
-        if(this.amount && this.convert){    
-            for(var i in this.convert){
-                if( Math.random()+((1/(this.convert[i].every || 1)) * dt) < 1) continue;
-                var count = this.amount;
-                //do we have enough for a full run?
-                for(var j in this.convert[i].from){
-                    var amt = this.convert[i].from[j] * count;
-                    while(amt > o.resByName[j].amount){
-                        amt -= this.convert[i].from[j];
-                        count -= 1;
+        this.element.buy.className = (this.element.cost.querySelectorAll('.expensive').length)?'fade buy-button':'buy-button';
+        
+        this.amount = Math.max(0,this.amount);
+        earnMoney(this.earn * dt * this.multiplier * this.amount);
+    }
+    o.Building.prototype.buy = function(amt,force){
+        amt = amt || 0;
+        if(this.onBuy)this.onBuy(amt,force);
+        for(var i = amt;i--;){
+            if(!force){
+                if(this.otherCost){
+                    for(var i in this.otherCost){
+                        if(o.buildsByName[i].amount < this.otherCost[i]) return;
                     }
                 }
-                if(count < 0) count = 0;
-                //now remove all the inputs
-                for(var j in this.convert[i].from){ o.resByName[j].spend(this.convert[i].from[j] * count); }
-                //and if there's not a fail chance, add the outputs
-                if(Math.random()+(this.convert[i].chance || 1) > 1){
-                    for(var j in this.convert[i].to){ o.resByName[j].earn(this.convert[i].to[j] * count); }
+                if(cashMoney < this.currentCost) break;
+                cashMoney -= this.currentCost;
+                if(this.otherCost){
+                    for(var i in this.otherCost){
+                        o.buildsByName[i].sell(this.otherCost[i],1);
+                    }
                 }
             }
+            if(this.bad && !force){
+                this.amount--;
+            }else{
+                this.amount++;
+                if(!force) this.totalAmount++;
+            }
+            this.currentCost = this.cost * Math.pow(this.growth,this.totalAmount);
         }
-        if(this.amount && this.upkeep){
-            var count = this.amount;
-            for(var i in this.upkeep){
-                var amt = this.upkeep[i] * count * o.resByName[i].efficiency;
-                while(amt > o.resByName[i].amount){
-                    amt -= this.upkeep[i];
-                    count -= 1;
-                }
-            }
-            if(count < 0) count = 0;
-            for(var i in this.upkeep){ o.resByName[i].spend(this.upkeep[i] * count * dt); }
-            if(count != this.amount){
-                if(this.recycled){
-                    this.sell(this.amount - count)
-                }else{
-                    this.die(this.amount - count);
-                }
-            }
-        }
-        if(this.amount && this.enroll){
-            for (var i in this.enroll){
-                if (o.buildsByName[i].amount < this.amount * this.enroll[i]) o.buildsByName[i].buy(1);
-            }
+        if(this.element.amount){
+            this.element.amount.classList.add('bounce');
+            classDelay(this.element.amount, 'bounce', 30);
         }
     }
-    //o.building.info
-    
+    o.Building.prototype.sell = function(amt,die){
+        amt = amt || 1;
+        if(amt == -1) amt = this.amount;
+        if(this.onSell)this.onSell(amt,die);
+        for(var i = amt;i--;){
+            this.amount--;
+            if(!die){
+                this.totalAmount--;
+                this.currentCost = this.cost * Math.pow(1.1,this.totalAmount);
+                cashMoney += this.currentCost;
+                if(this.otherCost){
+                    for(var i in this.otherCost){
+                        o.buildsByName[i].buy(this.otherCost[i],1);
+                    }
+                }
+            }
+        }
+        if(this.element.amount){
+            this.element.amount.classList.add('fallover');
+            classDelay(this.element.amount, 'fallover', 100);
+        }
+    }
+    o.Building.prototype.afford = function(){
+        if(this.require){
+            for(var i in this.require){
+                if(o.buildsByName[i].amount < this.require[i]) return 0;
+            }
+            return 1;
+        }
+        if(this.currentCost > allTimeMoney) return 0;
+        if(this.otherCost){
+            for(var i in this.otherCost){
+                if(o.buildsByName[i].amount < this.otherCost[i]) return 0;
+            }
+        }
+        return 1;
+    }
+
 /*/////////////////////////////////////////////////////////
-TECHNOLOGY
+TECHNOLOGIES
 /////////////////////////////////////////////////////////*/
     o.techs = [];
     o.techsByName = [];
     o.Tech = function(obj){
-        this.type = 'tech';
-        this.cost = {};
-        this.use = {};
-        this.req = {};
-        this.provide = {};
-        this.enroll = {};
-        this.effects = [];
-        this.reverseEffects = [];
-        this.icon = [0,0];
-        this.desc = '';
         this.unlocked = 0;
-        this.show = 1;
+        this.show = 0;
+        this.amount = 0;
+        this.totalAmount = 0;
+        this.icon = [0,0];
+        this.unlock = [];
+        this.effects = [];
+        this.desc = '';
         
-        for (var i in obj) this[i] = obj[i];
-		this.id = o.techs.length;
-		if (!this.displayName) this.displayName = this.name.charAt(0).toUpperCase() + this.name.slice(1);
+        for(var i in obj){ this[i] = obj[i]; }
         
-        this.amount = obj.startAmount || 0;
-        if(this.req.length != 0) this.show = 0;
+        this.currentCost = this.cost;
+        this.displayName = this.displayName || this.name[0].toUpperCase() + this.name.slice(1);
         
         this.element = {};
         this.element.container = doc.createElement('li');
         this.element.container.className = 'technology';
-        this.element.name = doc.createElement('h3');
-        this.element.name.textContent = this.displayName;
-        this.element.container.appendChild(this.element.name);
         this.element.icon = doc.createElement('div');
         this.element.icon.className = 'icon';
-        this.element.icon.style.background = 'url("sprite.png")';
-        this.element.icon.style.backgroundPosition = (this.icon[0]*32) + 'px ' + (this.icon[1]*32) + 'px';
+        this.element.icon.style.backgroundPosition = (this.icon[0]*-64) + 'px ' + (this.icon[1]*64) + 'px';
         this.element.container.appendChild(this.element.icon);
+        this.element.buy = doc.createElement('div');
+        this.element.buy.className = 'buy-button';
+        this.element.buy.dataset.id = this.name;
+        this.element.buy.addEventListener('click',clickBuy);
+        this.element.icon.appendChild(this.element.buy);
+        this.element.title = doc.createElement('h2');
+        this.element.title.textContent = this.displayName;
+        this.element.container.appendChild(this.element.title);
         this.element.desc = doc.createElement('p');
         this.element.desc.textContent = this.desc;
         this.element.container.appendChild(this.element.desc);
-        this.element.buy = doc.createElement('div');
-        this.element.buy.className = 'buy-button';
-        this.element.buy.textContent = 'Buy';
-        this.element.buy.dataset.id = this.name;
-        this.element.buy.addEventListener('click', clickBuy);
-        this.element.icon.appendChild(this.element.buy);
         this.element.cost = doc.createElement('ul');
-        this.element.cost.className = 'cost-list';
+        this.element.cost.className = 'cost';
         var html = '';
-        for(var i in this.cost){
-            html += '<li>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
+        html += '<li>' + currencySign + prettify(this.currentCost) + '</li>';
+        if(this.otherCost){
+            for(var i in this.otherCost){
+                html += '<li>' + this.otherCost[i] + ' ' + o.buildsByName[i].displayName + '</li>';
+            }
         }
         this.element.cost.innerHTML = html;
         this.element.container.appendChild(this.element.cost);
-        if(!this.show){this.element.container.classList.add('hide');}
-        switch(this.type){
-            case 'tech':
-                o.elements.techList.appendChild(this.element.container);
-                break;
-        }
-        this.needsUpdate = false;
+        o.technologyList.appendChild(this.element.container);
         
         o.techsByName[this.name] = this;
         o.techs.push(this);
     }
-    o.Tech.prototype.afford = function(amt){
-        amt = amt || 1;
-        for(var i in this.cost) if(o.resByName[i].amount < (this.cost[i]*amt)) return 0;
-        for(var i in this.use) if((o.resByName[i].amount - o.resByName[i].used) < (this.use[i]*amt)) return 0;
-        for(var i in this.req){
-            var t = o.resByName[i] || o.buildsByName[i] || o.techsByName[i];
-            if(!t && o.resByType[i]){
-                var total = 0,
-                    all = o.resByType[i];
-                    for(var j in all) total += all[j].amount;
-                    if(total < this.req[i]*amt) return 0;            
-            }else if(!t || (t.usable && ((t.amount - t.used) < (this.req[i] * amt))) || t.amount < (this.req[i] * amt)) return 0;
-        }
-        return 1;
-    }
-    o.Tech.prototype.requirements = function(){
-        for(var i in this.req){
-            var t = o.resByName[i] || o.buildsByName[i] || o.techsByName[i];
-            if(!t && o.resByType[i]){
-                var total = 0,
-                    all = o.resByType[i];
-                    for(var j in all) total += all[j].amount;
-                    if(total < this.req[i]) return 0;            
-            }else if(!t || (t.usable && ((t.amount - t.used) < (this.req[i]))) || t.amount < (this.req[i])) return 0;
-        }
-        return 1;
-    }
-    o.Tech.prototype.buy = function(amt){
-        amt = amt || 1;
-        if(!this.afford(amt)) return;
-        for(var i in this.cost) o.resByName[i].spend(this.cost[i]*amt);
-        for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].earn(this.provide[i]*amt);
-        for(var i in this.unlock){
-            var t = o.resByName[this.unlock[i]] || o.buildsByName[this.unlock[i]] || o.techsByName[this.unlock[i]];
-            if(t && t.unlocked == 0) t.unlocked = 1;
-        }
-        for(var i in this.obsolete){
-            if(o.buildsByName[this.obsolete[i]]){
-                o.buildsByName[this.obsolete[i]].sell(o.buildsByName[this.obsolete[i]].amount);
-                o.buildsByName[this.obsolete[i]].unlocked = -1;
-            }else if(o.techsByName[this.obsolete[i]]){
-                o.techsByName[this.obsolete[i]].die();
+    o.Tech.prototype.update = function(dt){
+        if(this.onTick)this.onTick(dt);
+        if(!this.show && this.unlocked && this.afford()){
+            this.show = 1;
+            newTechs++;
+            o.techNote.textContent = newTechs;
+            o.techNote.classList.remove('hide');
+            if(techHidden){
+                techHidden = false;
+                o.techTab.classList.remove('hide');
             }
         }
-        for(var i in this.effects){
-            this.effects[i]();
-        }
-        this.amount += amt;
-        o.elements.techListBought.appendChild(this.element.container);
-        this.element.buy.style.display = 'none';
-        //todo: disable buying?
-    }
-    o.Tech.prototype.forceBuy = function(amt){
-        amt = amt || 1;
-        for(var i in this.use) o.resByName[i].used += (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].earn(this.provide[i]*amt);
-        for(var i in this.unlock){
-            var t = o.resByName[this.unlock[i]] || o.buildsByName[this.unlock[i]] || o.techsByName[this.unlock[i]];
-            if(t && t.unlocked == 0) t.unlocked = 1;
-        }
-        for(var i in this.obsolete){
-            if(o.buildsByName[this.obsolete[i]]){
-                o.buildsByName[this.obsolete[i]].sell(o.buildsByName[this.obsolete[i]].amount);
-                o.buildsByName[this.obsolete[i]].unlocked = -1;
-            }else if(o.techsByName[this.obsolete[i]]){
-                o.techsByName[this.obsolete[i]].die();
-            }
-        }
-        for(var i in this.effects){
-            this.effects[i]();
-        }
-        this.amount += amt;
-        o.elements.techListBought.appendChild(this.element.container);
-        this.element.buy.style.display = 'none';
-    }
-    o.Tech.prototype.sell = function(amt){
-        //todo: this, but it probably won't be used, techs aren't sold
-        amt = amt || 1;
-        if(!this.amount) return;
-        for(var i in this.cost) o.resByName[i].earn(this.cost[i]*amt);
-        for(var i in this.use) o.resByName[i].used -= (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].spend(this.provide[i]*amt);
-        this.amount -= amt;
-        this.needsUpdate = true;
-    }
-    o.Tech.prototype.die = function(amt){
-        //like selling, but no return on resources
-        amt = amt || 1;
-        if(!this.amount) return;
+        this.element.container.className = (this.show || this.amount)?'technology':'technology hide';
         
-        for(var i in this.use) o.resByName[i].used -= (this.use[i]*amt);
-        for(var i in this.provide) o.resByName[i].spend(this.cost[i]*amt);
-        for(var i in this.unlock){
-            if(o.buildsByName[this.unlock[i]]){
-                o.buildsByName[this.unlock[i]].sell(o.buildsByName[this.unlock[i]].amount);
-                o.buildsByName[this.unlock[i]].unlocked = -1;
-            }else if(o.techsByName[this.unlock[i]]){
-                o.techsByName[this.unlock[i]].die();
-            }
-        }
-        for(var i in this.obsolete){
-            var t = o.resByName[this.obsolete[i]] || o.buildsByName[this.obsolete[i]] || o.techsByName[this.obsolete[i]];
-            if(t && t.unlocked == 0) t.unlocked = 1;
-        }
-        this.amount -= amt;
-    }
-    o.Tech.prototype.update = function(){
-        if(this.unlocked && !this.show && this.requirements())this.show = 1;
-        if(this.show && this.unlocked){
-            this.element.container.classList.remove('hide');
-        }else{
-            this.element.container.classList.add('hide');
-        }
-        if(!this.amount){
-            if(this.afford(1)){ this.element.container.classList.remove('unaffordable'); }
-            else{ this.element.container.classList.add('unaffordable'); }
-        }
-        var html = '';
         if(this.amount == 0){
-            for(var i in this.cost){
-                html += '<li';
-                if(this.cost[i] > o.resByName[i].amount) html += ' class=insufficient ';
-                html += '>' + this.cost[i] + ' ' + o.resByName[i].name + '</li>';
+            var html = '';
+            html += '<li' + ((this.currentCost > cashMoney)?' class=expensive>':'>');
+            html += currencySign + prettify(this.currentCost) + '</li>';
+            if(this.otherCost){
+                for(var i in this.otherCost){
+                    html += '<li' + ((o.buildsByName[i].amount < this.otherCost[i])?' class=expensive>':'>'); 
+                    html += this.otherCost[i] + ' ' + o.buildsByName[i].displayName + '</li>';
+                }
+            }
+            this.element.cost.innerHTML = html;
+            
+            this.element.buy.className = (this.element.cost.querySelectorAll('.expensive').length)?'fade buy-button':'buy-button';
+        }else{
+            this.element.container.className = 'technology bought';
+            this.element.buy.className = 'hide';
+        }
+    }
+    o.Tech.prototype.buy = function(amt,force){
+        o.Building.prototype.buy.call(this,amt,force);
+        for(var i in this.unlock){
+            var t = o.buildsByName[this.unlock[i]] || o.techsByName[this.unlock[i]];
+            if(t) t.unlocked = 1;
+        }
+        for(var i in this.effects){
+            this.effects[i]();
+        }
+    }
+    o.Tech.prototype.sell = o.Building.prototype.sell;
+    o.Tech.prototype.afford = o.Building.prototype.afford;
+
+/*/////////////////////////////////////////////////////////
+EVENTS
+/////////////////////////////////////////////////////////*/
+    var modalEffects = [];
+    function openModal(title,content,buttons){
+        o.modalTitle.textContent = title;
+        o.modalContent.innerHTML = content;
+        for(var i = 3;i--;){
+            if(buttons[i]){
+                o.modalButtons[i].classList.remove('hide');
+                o.modalButtons[i].textContent = buttons[i].text;
+                modalEffects[i] = buttons[i].effect;
+            }else{
+                o.modalButtons[i].classList.add('hide');
             }
         }
-        this.element.cost.innerHTML = html;
+        o.modal.classList.add('open');
+    }
+    o.openModal = openModal;
+    function closeModal(){
+        o.modal.classList.remove('open');
+        eventWaiting = 0;
+    }
+    o.closeModal = closeModal;
+    
+    var randomTick = 0,
+        eventWaiting = 0;
+    function updateEvent(dt){
+        if(eventWaiting) return;
+        randomTick = Math.random()*100;
+        var list = [];
+        for(var i in o.events){
+            list.push(o.events[i].test(dt));
+        }
+        var e = choose(list)
+        if(e) e.go();
+    }
+    
+    o.events = [];
+    o.eventsByName = [];
+    o.Event = function(obj){
+        this.require = {};
+        this.effects = [];
+        this.modal = 0;
+        this.content = 0;
+        this.chance = 0;
+        
+        for(var i in obj){ this[i] = obj[i]; }
+        this.displayName = this.displayName || this.name[0].toUpperCase() + this.name.slice(1);
+        
+        o.eventsByName[this.name] = this;
+        o.events.push(this);
+    }
+    o.Event.prototype.test = function(dt){
+        if((randomTick + (this.chance*dt)) < 100) return;
+        
+        for(var i in this.require){
+            var t = o.buildsByName[i] || o.techsByName[i];
+            if(t){
+                if(this.require[i] < 0){
+                    if(t.amount > Math.abs(this.require[i])) return;
+                }else{
+                    if(t.amount < this.require[i]) return;
+                }
+            }else if(i == 'money'){
+                if(this.require[i] < 0){
+                    if(cashMoney > Math.abs(this.require[i])) return;
+                }else{
+                    if(cashMoney < this.require[i]) return;
+                }
+            }else if(i == 'totalMoney'){
+                if(this.require[i] < 0){
+                    if(allTimeMoney > Math.abs(this.require[i])) return;
+                }else{
+                    if(allTimeMoney < this.require[i]) return;
+                }
+            }else if(i == 'time'){
+                if(this.require[i] < 0){
+                    if(totalTime > Math.abs(this.require[i])*1000) return;
+                }else{
+                    if(totalTime < this.require[i]*1000) return;
+                }
+            }
+        }
+        
+        return this;
+    }
+    o.Event.prototype.go = function(){
+        if(this.modal){
+            eventWaiting = 1;
+            openModal(this.displayName,this.content,this.buttons);
+        }else if(this.ticker){
+            insertMessage(this.content);
+        }
+        if(this.once) this.chance = 0;
+        for(var i in this.effects){
+            this.effects[i]();
+        }
     }
 
 /*/////////////////////////////////////////////////////////
@@ -825,8 +622,7 @@ SAVE AND LOAD
         setTimeout(o.save,60000);
         if(paused)return;   //don't save mid-modal interrupt, just try again later
         localStorage.setItem('colony-game',JSON.stringify(writeSave()));
-        o.elements.saved.classList.add('open');
-        classDelay(o.elements.saved,'open',1000);
+        insertMessage({'name':'save','text':'Game Saved!'});
     }
     o.gimmeSave = function(){
         return JSON.parse(localStorage.getItem('colony-game'));
@@ -835,18 +631,22 @@ SAVE AND LOAD
         var loaded = JSON.parse(localStorage.getItem('colony-game'));
         if(!loaded)return false;
         totalTime = loaded.time;
-        for(var i in loaded.res){
-            o.resByName[i].amount = loaded.res[i].amount;
-            o.resByName[i].multiplier = loaded.res[i].multiplier;
-            o.resByName[i].efficiency = loaded.res[i].efficiency;
-        }
+        lastTime = loaded.lastTime;
+        cashMoney = loaded.cashMoney;
+        allTimeMoney = loaded.allTimeMoney;
         for(var i in loaded.techs){
-            if(loaded.techs[i]) o.techsByName[i].forceBuy();
+            if(loaded.techs[i]){
+                o.techsByName[i].buy(1,1);
+                o.techsByName[i].show = 1;
+                if(techHidden){
+                    techHidden = false;
+                    o.techTab.classList.remove('hide');
+                }
+            }
         }
         for(var i in loaded.builds){
-            o.buildsByName[i].forceBuy(loaded.builds[i].amount);
-            o.buildsByName[i].multiplier = loaded.builds[i].multiplier;
-            o.buildsByName[i].efficiency = loaded.builds[i].efficiency;
+            o.buildsByName[i].totalAmount = loaded.builds[i].total;
+            o.buildsByName[i].buy(loaded.builds[i].amount,1);
         }
         return true;
     }
@@ -859,18 +659,15 @@ SAVE AND LOAD
         localStorage.removeItem('colony-game');
     }
     function writeSave(){
-        var obj = {'version':o.version,'res':{},'builds':{},'techs':{},'story':{},'time':totalTime};
-        for(var i in o.resByName){
-            obj.res[i] = {};
-            obj.res[i].amount = o.resByName[i].amount;
-            obj.res[i].multiplier = o.resByName[i].multiplier;
-            obj.res[i].efficiency = o.resByName[i].efficiency;
-        }
+        var obj = {'version':o.version,'builds':{},'techs':{},'story':{}};
+        obj.cashMoney = cashMoney;
+        obj.allTimeMoney = allTimeMoney;
+        obj.time = totalTime;
+        obj.lastTime = lastTime;
         for(var i in o.buildsByName){
             obj.builds[i] = {};
             obj.builds[i].amount = o.buildsByName[i].amount;
-            obj.builds[i].multiplier = o.buildsByName[i].multiplier;
-            obj.builds[i].efficiency = o.buildsByName[i].efficiency;
+            obj.builds[i].total = o.buildsByName[i].totalAmount;
         }
         for(var i in o.techsByName){
             obj.techs[i] = o.techsByName[i].amount;
@@ -882,23 +679,43 @@ SAVE AND LOAD
 /*/////////////////////////////////////////////////////////
 HELPER FUNCTIONS
 /////////////////////////////////////////////////////////*/
+
     function clickBuy(e){
         var t = o.buildsByName[e.target.dataset.id] || o.techsByName[e.target.dataset.id];
-        t.buy();
+        t.buy(1);
     }
     function clickSell(e){
         var t = o.buildsByName[e.target.dataset.id] || o.techsByName[e.target.dataset.id];
-        t.sell();
+        t.sell(1);
     }
+    
+    function clickOpen(e){
+        var t = e.target.dataset.id;
+        switch(t){
+            case 'buildings':
+                for(var i in o.tabs){ o.tabs[i].classList.remove('active'); }
+                o.technologyList.classList.remove('active');
+                o.buildingList.classList.add('active');
+                e.target.classList.add('active');
+                break;
+            case 'technology':
+                for(var i in o.tabs){ o.tabs[i].classList.remove('active'); }
+                o.buildingList.classList.remove('active');
+                o.technologyList.classList.add('active');
+                e.target.classList.add('active');
+                newTechs = 0;
+                o.techNote.classList.add('hide');
+                break;
+        }
+    }
+    for(var i in o.tabs){ o.tabs[i].addEventListener('click',clickOpen); }
+    
     function clickModal(e){
-        var t = o.Modal.buttonEffects[e.target.dataset.id];
-        if(t) t();
-        o.Modal.close();
+        var t = e.target.dataset.id;
+        if(modalEffects[t])modalEffects[t]();
+        closeModal();
     }
-    function clickEdit(e){
-        var t = o.resByName[e.target.dataset.id];
-        t.edit();
-    }
+    for(var i in o.modalButtons){ o.modalButtons[i].addEventListener('click',clickModal); }
     
     function classDelay(element,tag,delay){
         setTimeout(function(){
@@ -912,7 +729,6 @@ HELPER FUNCTIONS
         },delay)
     }
     
-    
     function ready(){
         if(Colony.ready){init()}
         else {setTimeout(ready,10)};
@@ -920,9 +736,7 @@ HELPER FUNCTIONS
     setTimeout(ready, 10);
     return o;
 }(window,document);
+
 function choose(arr){
-    return arr[Math.floor(Math.random()*arr.length)];
-}
-function capitalize(s){
-    return s.charAt(0).toUpperCase() + s.slice(1)
+    return arr[Math.floor(Math.random() * arr.length)];
 }
