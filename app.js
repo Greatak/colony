@@ -34,6 +34,7 @@ INITIALIZATION
         if(!o.load()) firstTime();
         nextMessage();
         requestAnimationFrame(tick);
+        setTimeout(o.save,30000);
     }
     function firstTime(){
         var letters = [['D','S','K'],['SP','EG','VQ'],['a','b','c','d','e']];
@@ -619,7 +620,7 @@ SAVE AND LOAD
 /////////////////////////////////////////////////////////*/    
     
     o.save = function(){
-        setTimeout(o.save,60000);
+        setTimeout(o.save,30000);
         if(paused)return;   //don't save mid-modal interrupt, just try again later
         localStorage.setItem('colony-game',JSON.stringify(writeSave()));
         insertMessage({'name':'save','text':'Game Saved!'});
