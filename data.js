@@ -1,4 +1,13 @@
 new Colony.Building({
+    'bad':1,
+    'name':'collapsemine',
+    'displayName':'Mine Collapse!',
+    'cost':50000,
+    'earn':-250,
+    'desc':"Miners are trapped and safety concerns impair progress at other sites"
+});
+
+new Colony.Building({
     'name':'explorer',
     'cost':25,
     'earn':0.1,
@@ -100,6 +109,9 @@ new Colony.Building({
 
 function Moolah(amt){
     return function(){ Colony.earnMoney(amt); };
+}
+function Chance(event,n){
+    return function(){ Colony.eventsByName[event].chance = n; };
 }
 function AddEarn(what,amt){
     var r = Colony.buildsByName[what];
@@ -302,7 +314,8 @@ new Colony.Tech({
         'mine':25
     },
     'effects':[
-        AddMultiplier('mine',2)
+        AddMultiplier('mine',2),
+        Chance('minecollapse',0)
     ],
     'unlocked':1,
     'desc':"Modular framework for structural supports allows mining to progress faster and reach deeper",
@@ -356,6 +369,26 @@ new Colony.Event({
     'buttons':[{'text':'Accept','effect':Moolah(0.5,1)}],
     'require':{
         'time':500
+    },
+    'chance':0.5
+});
+
+new Colony.Event({
+    'name':'minecollapse',
+    'displayName':'Mine Collapse!',
+    'modal':1,
+    'content':"<p>Overeager mining crews ignited a methane pocket and triggered a cave-in at one of our mines. They managed to get to an emergency shelter, but they can't stay down there forever. Our engineers have assessed the collapse and tell me it hasn't compromised the structure so we should be able to excavate without complication. They've put together two plans for your consideration:</p><p><b>Plan A:</b> If we've got a prospecting team and "+Colony.currency+"40,000, we can blast through the debris and get them out. If we do this, most of the prospecting team will stay on while we rebuild the mine.</p><p><b>Plan B:</b> Otherwise, they say it'll cost almost as much as a new mine if we let the rubble settle but you can safely deal with it without any more personnel.",
+    'buttons':[
+        {'text':'Plan A','effect':function(){
+            if(Colony.buildsByName['survey'].amount == 0) return true;
+            Colony.earnMoney(-40000);
+            Colony.buildsByName['survey'].sell(1,1);
+            Colony.buildsByName['explorer'].buy(1,1);
+        }},
+        {'text':'Plan B','effect':function(){Colony.buildsByName['collapsemine'].buy(1,1);}}
+    ],
+    'require':{
+        'mine':1
     },
     'chance':0.5
 });

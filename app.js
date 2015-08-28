@@ -47,6 +47,8 @@ INITIALIZATION
         paused = false,
         techHidden = true,
         newTechs = 0;
+        
+    o.currency = currencySign;
     
     //might need to save some player data
     o.story = {};
@@ -504,6 +506,7 @@ BUILDINGS
             }
             //if it's a negative event building, purchasing means destroying
             if(this.bad && !force){
+                this.totalAmount++;
                 this.amount--;
             //if it's been forced and not bad, just add the building, we already deducted funds
             }else{
@@ -971,8 +974,13 @@ HELPER FUNCTIONS
     //any button clicks in a modal, closes by default, don't need to include that
     function clickModal(e){
         var t = e.target.dataset.id;
-        if(modalEffects[t])modalEffects[t]();
-        closeModal();
+        var cancel = false;
+        if(modalEffects[t])cancel = modalEffects[t]();
+        if(cancel){
+            e.target.classList.add('fade');
+        }else{
+            closeModal();
+        }
     }
     for(var i in o.modalButtons){ o.modalButtons[i].addEventListener('click',clickModal); }
     
