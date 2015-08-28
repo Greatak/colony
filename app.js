@@ -567,7 +567,7 @@ BUILDINGS
         //if so, then do we have enough of the building costs?
         if(this.otherCost){
             for(var i in this.otherCost){
-                if(o.buildsByName[i].amount < this.otherCost[i]) return 0;
+                if(o.buildsByName[i].totalAmount < this.otherCost[i]) return 0;
             }
         }
         return 1;
