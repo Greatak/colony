@@ -1,7 +1,6 @@
 new Colony.Building({
     'name':'explorer',
     'cost':25,
-    'growth':1.5,
     'earn':0.1,
     'unlocked':1,
     'desc':"First wave of colonists, eager to discover what this world holds"
@@ -31,7 +30,6 @@ new Colony.Building({
 new Colony.Building({
     'name':'farm',
     'cost':10000,
-    'growth':1.3,
     'otherCost':{
         'garden':1
     },
