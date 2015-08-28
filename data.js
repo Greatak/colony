@@ -29,15 +29,76 @@ new Colony.Building({
     'desc':"Devote some explorers to cataloguing native life"
 });
 new Colony.Building({
+    'name':'farm',
+    'cost':10000,
+    'growth':1.3,
+    'otherCost':{
+        'garden':1
+    },
+    'earn':50,
+    'desc':"Put those botanical samples to use. Some of them are edible; others we can export",
+    'onBuy':function(amt){ Colony.buildsByName['explorer'].offsetAmount += amt; },
+    'onSell':function(amt){ Colony.buildsByName['explorer'].offsetAmount -= amt; }
+});
+new Colony.Building({
     'name':'mine',
     'displayName':'Shaft Mine',
-    'cost':10000,
+    'cost':50000,
     'otherCost':{
         'survey':1
     },
-    'earn':100,
+    'earn':200,
     'desc':"Industry must begin somewhere"
 });
+
+/*todo:
+//some buildings make colonists cheaper
+//some buildings make others more efficient
+//some improve morale
+//some reduce independence
+//most just make money
+    refinery
+    methane well
+    steel foundry
+    alumina plant
+    copper refining
+    housing
+    clinic
+    medical research
+    farms
+    aeroponic towers
+    factories
+    launch facilities
+    space elevator
+    high rises
+    civic centers
+    museums
+    zoos
+    outposts
+    homesteads
+    police station
+    hospital
+    train stations
+    laboratory
+    ports
+    aquaculture
+    
+//negative buildings
+    mine collapse
+    wild animal attack
+    food shortage
+    power failure
+    worker strike
+    disease outbreak
+    riot
+    protests
+    robot uprising
+    earthquake
+    rocket crash
+    ents
+*/
+
+//EFFECT FUNCTIONS
 
 function Moolah(amt){
     return function(){ Colony.earnMoney(amt); };
@@ -52,6 +113,7 @@ function AddMultiplier(what,amt){
 }
 
 //TECHNOLOGIES
+//generally, a building should have a 5, 25, 50, 100, 200
 
 new Colony.Tech({
     'name':'betterdiet',
@@ -64,7 +126,8 @@ new Colony.Tech({
         AddEarn('explorer',0.2)
     ],
     'unlocked':1,
-    'desc':"Optimized nutrition should let your explorers remain active for longer each day"
+    'desc':"Optimized nutrition should let your explorers remain active for longer each day",
+    'unlockText':"Explorers blame rations for slow progress"
 });
 new Colony.Tech({
     'name':'betterequipment',
@@ -77,7 +140,8 @@ new Colony.Tech({
         AddMultiplier('explorer',2)
     ],
     'unlocked':1,
-    'desc':"Lightweight materials and better tools will make your explorers twice as efficient"
+    'desc':"Lightweight materials and better tools will make your explorers twice as efficient",
+    'unlockText':"Equipment bid promises lighter loads, easier expeditions"
 });
 new Colony.Tech({
     'name':'cartography',
@@ -89,7 +153,8 @@ new Colony.Tech({
         AddMultiplier('explorer',2)
     ],
     'unlocked':1,
-    'desc':"Survey satellites can provide maps to let your explorers cover more ground"
+    'desc':"Survey satellites can provide maps to let your explorers cover more ground",
+    'unlockText':"Topographic maps would help progress, explorers say"
 });
 new Colony.Tech({
     'name':'magnetometers',
@@ -102,7 +167,8 @@ new Colony.Tech({
     ],
     'unlocked':1,
     'unlock':['mine'],
-    'desc':"Equipping your survey teams with sensitive magnetometers will let them find mineral veins more accurately"
+    'desc':"Equipping your survey teams with sensitive magnetometers will let them find mineral veins more accurately",
+    'unlockText':"Chemical tests too inaccurate, geologists concerned they can't find anything under thick regolith"
 });
 new Colony.Tech({
     'name':'geophysics',
@@ -114,7 +180,8 @@ new Colony.Tech({
         AddMultiplier('survey',2)
     ],
     'unlocked':1,
-    'desc':"Detailed studies of the planet will provide a better background for future surveys, doubling efficiency"
+    'desc':"Detailed studies of the planet will provide a better background for future surveys, doubling efficiency",
+    'unlockText':"Broad-scope geophysical surveys would be better use of resources, geologists claim"
 });
 new Colony.Tech({
     'name':'seismology',
@@ -127,7 +194,8 @@ new Colony.Tech({
         AddMultiplier('survey',2)
     ],
     'unlocked':1,
-    'desc':"Drilling paired with sensitive seismic monitoring equipment will allow us to map below the surface"
+    'desc':"Drilling paired with sensitive seismic monitoring equipment will allow us to map below the surface",
+    'unlockText':"New equipment could let mines find deeper deposits, more accurately"
 });
 new Colony.Tech({
     'name':'xenobotany',
@@ -138,8 +206,10 @@ new Colony.Tech({
     'effects':[
         AddEarn('garden',4)
     ],
+    'unlock':['farm'],
     'unlocked':1,
-    'desc':"Developing a systematic nomenclature will allow for quicker evaluations of native plants"
+    'desc':"Developing a systematic nomenclature will allow for quicker evaluations of native plants",
+    'unlockText':"Botanists eager to study local plantlife for novel adaptations"
 });
 new Colony.Tech({
     'name':'edaphology',
@@ -151,7 +221,8 @@ new Colony.Tech({
         AddMultiplier('garden',2)
     ],
     'unlocked':1,
-    'desc':"Studying the soil composition will allow us to grow our own specimens in half the time"
+    'desc':"Studying the soil composition will allow us to grow our own specimens in half the time",
+    'unlockText':"Local plants could be valuable food source, but soil composition is a lingering question"
 });
 new Colony.Tech({
     'name':'alienecology',
@@ -164,12 +235,56 @@ new Colony.Tech({
         AddMultiplier('garden',2)
     ],
     'unlocked':1,
-    'desc':"Understanding the relationships between different species will improve our greenhouse yields"
+    'desc':"Understanding the relationships between different species will improve our greenhouse yields",
+    'unlockText':"Biologists discover symbiotic microbes that could improve crop yields substantially"
+});
+new Colony.Tech({
+    'name':'rotation',
+    'displayName':'Crop Rotation',
+    'cost':40000,
+    'require':{
+        'farm':5
+    },
+    'effects':[
+        AddEarn('farm',50)
+    ],
+    'unlocked':1,
+    'desc':"The new species require some study to establish crop rotation practices",
+    'unlockText':"Nutrient cycles for native plants unknown, hampering local agriculture"
+});
+new Colony.Tech({
+    'name':'condensers',
+    'displayName':'Fog Irrigation',
+    'cost':400000,
+    'require':{
+        'farm':25
+    },
+    'effects':[
+        AddMultiplier('farm',2)
+    ],
+    'unlocked':1,
+    'desc':"Extracting moisture from the night air can provide a reliable source of water",
+    'unlockText':"Local aquifers unpredictable, farmers call for condensation to water crops"
+});
+//todo: native or imported variety decision
+new Colony.Tech({
+    'name':'genegarden',
+    'displayName':'Adaptive Epigenetics',
+    'cost':1200000,
+    'require':{
+        'farm':50
+    },
+    'effects':[
+        AddMultiplier('farm',2)
+    ],
+    'unlocked':1,
+    'desc':"Local flora has proven fruitful, but it's still hard to compete with offworld yields",
+    'unlockText':"Scientists experiment with new cultivars to improve farm yield"
 });
 new Colony.Tech({
     'name':'trams',
     'displayName':'Hauler Trams',
-    'cost':40000,
+    'cost':100000,
     'require':{
         'mine':5
     },
@@ -178,12 +293,13 @@ new Colony.Tech({
     ],
     'unlocked':1,
     'unlock':['mine'],
-    'desc':"Fixed infrastructure for moving people and ore around mining facilities reduces operating costs"
+    'desc':"Fixed infrastructure for moving people and ore around mining facilities reduces operating costs",
+    'unlockText':"Miners tired of lugging ore around by hand in this day and age"
 });
 new Colony.Tech({
     'name':'stableshaft',
     'displayName':'Shaft Stabilization',
-    'cost':400000,
+    'cost':1000000,
     'require':{
         'mine':25
     },
@@ -191,11 +307,12 @@ new Colony.Tech({
         AddMultiplier('mine',2)
     ],
     'unlocked':1,
-    'desc':"Modular framework for structural supports allows mining to progress faster and reach deeper"
+    'desc':"Modular framework for structural supports allows mining to progress faster and reach deeper",
+    'unlockText':"String of cave-in scares slows progress at new mine"
 });
 new Colony.Tech({
     'name':'telerobotics',
-    'cost':1200000,
+    'cost':3000000,
     'require':{
         'mine':50
     },
@@ -203,7 +320,8 @@ new Colony.Tech({
         AddMultiplier('mine',2)
     ],
     'unlocked':1,
-    'desc':"Robotic miners can operate with limited safety considerations and need less infrastructure to support"
+    'desc':"Robotic miners can operate with limited safety considerations and need less infrastructure to support",
+    'unlockText':"Injuries and delays due to cave-ins a thing of the past with new advances in robotics"
 });
 
 //MODAL EVENTS

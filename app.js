@@ -1,6 +1,21 @@
 var Colony = function(win,doc,undefined){
     var o = {};
     
+    //todo: commodity markets
+    //todo: message log
+    //todo: lots of buildings
+    //todo: harmony consequences
+    //todo: support consequences
+    //todo: independence consequences
+    //todo: morale consequences
+    //todo: colonial policies
+    //todo: lots of events
+    //todo: ticker message for tech unlocks
+    //todo: prestige/new planets
+    //todo: manual click modifiers
+    //todo: menu
+    //todo: building categories, invisible until tech
+    //todo: pictures
     o.version = 0.01;
     
 /*/////////////////////////////////////////////////////////
@@ -204,11 +219,13 @@ TICKER TAPE
     TapeMessage.prototype.remove = function(){
         //get rid of it
         o.tickerTape.removeChild(this.element);
+        tapeNames.splice(tapeNames.indexOf(this.name),1);
         //stop updating it
         visibleMessages.splice(visibleMessages.indexOf(this),1);
         //if it's supposed to repeat, requeue it
         if(this.repeat--){
             tapeMessages.push(this);
+            tapeNames.push(this.name);
         }
     }
     //ask for next message
@@ -345,6 +362,7 @@ BUILDINGS
         this.show = 0;              //is it displayed?
         this.amount = 0;            //how many are there?
         this.totalAmount = 0;       //how many have been bought?
+        this.offsetAmount = 0;
         this.growth = growthRate;   //how much more expensive is the next one?
         this.icon = [0,0];          //where's the picture?
         this.cost = 0;              //what's it cost?
@@ -417,6 +435,7 @@ BUILDINGS
     o.Building.prototype.update = function(dt){
         //custom tick function? do that
         if(this.onTick)this.onTick(dt);
+        this.currentCost = this.cost * Math.pow(this.growth,this.totalAmount-this.offsetAmount);
         //if there's some to sell, make sell clickable
         if(!this.bad)this.element.sell.className = (this.amount <= 0)?'fade sell-button':'sell-button';
         //update the amount
@@ -490,7 +509,7 @@ BUILDINGS
             }
             //increase the cost, we need to do this clunky total amount thing to avoid floating point errors.
             //this is basically currentCost += currentCost * growth
-            this.currentCost = this.cost * Math.pow(this.growth,this.totalAmount);
+            this.currentCost = this.cost * Math.pow(this.growth,this.totalAmount-this.offsetAmount);
         }
         //fun++
         if(this.element.amount){
@@ -515,7 +534,7 @@ BUILDINGS
                 //reduce total amount
                 this.totalAmount--;
                 //jump the price back, giving us the price we used to buy this one
-                this.currentCost = this.cost * Math.pow(1.1,this.totalAmount);
+                this.currentCost = this.cost * Math.pow(this.growth,this.totalAmount-this.offsetAmount);
                 //give back that money
                 //todo: earnMoney issue with total money increasing, this isn't profit
                 cashMoney += this.currentCost;
@@ -572,6 +591,7 @@ TECHNOLOGIES
         this.unlock = [];               //doesn't unlock anything else by default
         this.effects = [];              //has no other effects by default
         this.desc = '';                 //what does it say on the tile?
+        this.unlockText = '';           //what ticker message when unlock?
         
         //set all the things
         for(var i in obj){ this[i] = obj[i]; }
@@ -626,6 +646,7 @@ TECHNOLOGIES
         //and make a notification to show when there's new techs
         if(!this.show && this.unlocked && this.afford()){
             this.show = 1;
+            insertMessage({'name':this.name+'unlock','text':this.unlockText});
             newTechs++;
             o.techNote.textContent = newTechs;
             o.techNote.classList.remove('hide');

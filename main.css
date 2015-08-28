@@ -59,9 +59,25 @@ ul {
 }
 
 .gamespace {
+    background: url('stars.png');
     height: 90vh;
     overflow: hidden;
     position: relative;
+    -webkit-animation: stars 60s linear infinite;
+    -moz-animation: stars 60s linear infinite;
+    animation: stars 60s linear infinite;
+}
+@-webkit-keyframes stars {
+  0% { background-position: 0 0; }
+  100% { background-position: 1680px 0; }
+}
+@-moz-keyframes stars {
+  0% { background-position: 0 0; }
+  100% { background-position: 1680px 0; }
+}
+@keyframes stars {
+  0% { background-position: 0 0; }
+  100% { background-position: 1680px 0; }
 }
 
 .ticker{
@@ -122,7 +138,8 @@ ul {
     width: 4px;
 }
 .orbit .survey-thing {
-    -webkit-animation: orbit 1s ease-in-out;
+    -webkit-animation: orbit 1s linear;
+    -moz-animation: orbit 1s linear;
     animation: orbit 1s linear;
 }
 @keyframes orbit {
@@ -133,12 +150,21 @@ ul {
   80% { transform: translate( -150px, 40px ); opacity: 0.7; }
   100% { transform: translate( -200px, 0px ); opacity: 0; }
 }
+@-moz-keyframes orbit {
+  0% { transform: translate( 200px, 0px ); opacity: 0; }
+  20% { transform: translate( 150px, 40px ); opacity: 0.7; }
+  40% { transform: translate( 50px, 60px ); opacity: 1; }
+  60% { transform: translate( -50px, 60px ); opacity: 1; }
+  80% { transform: translate( -150px, 40px ); opacity: 0.7; }
+  100% { transform: translate( -200px, 0px ); opacity: 0; }
+}
 @-webkit-keyframes orbit {
-  0% { transform: translate( 200px, 0px ); }
-  20% { transform: translateX( 150px, 20px ); }
-  50% { transform: translate( 0px, 80px ); }
-  80% { transform: translateX( -150px, 20px ); }
-  100% { transform: translate( -200px, 0px ); }
+  0% { transform: translate( 200px, 0px ); opacity: 0; }
+  20% { transform: translate( 150px, 40px ); opacity: 0.7; }
+  40% { transform: translate( 50px, 60px ); opacity: 1; }
+  60% { transform: translate( -50px, 60px ); opacity: 1; }
+  80% { transform: translate( -150px, 40px ); opacity: 0.7; }
+  100% { transform: translate( -200px, 0px ); opacity: 0; }
 }
 
 .menuspace {
