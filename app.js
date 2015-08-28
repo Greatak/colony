@@ -439,7 +439,7 @@ BUILDINGS
         if(this.onTick)this.onTick(dt);
         this.currentCost = this.cost * Math.pow(this.growth,this.totalAmount-this.offsetAmount);
         //if there's some to sell, make sell clickable
-        if(!this.bad)this.element.sell.className = (this.amount <= 0)?'fade sell-button':'sell-button';
+        if(!this.bad)this.element.sell.className = (this.amount <= 0 || this.name == 'explorer')?'fade sell-button':'sell-button';
         //update the amount
         this.element.amount.textContent = prettify(Math.floor(this.amount),0);
         
