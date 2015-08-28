@@ -408,6 +408,8 @@ BUILDINGS
         this.element.title = doc.createElement('h2');
         this.element.title.textContent = this.displayName;
         this.element.container.appendChild(this.element.title);
+        this.element.earn = doc.createElement('p');
+        this.element.title.appendChild(this.element.earn);
         //again, floated so it needs to come first despite showing up after costs
         this.element.desc = doc.createElement('p');
         this.element.desc.textContent = this.desc;
@@ -460,6 +462,8 @@ BUILDINGS
             }
         }
         this.element.cost.innerHTML = html;
+        
+        this.element.earn.textContent = currencySign + prettify(this.earn * this.multiplier) + '/sec';
         
         //after we make the list, if anything is unaffordable, don't let the buy button get clicked
         this.element.buy.className = (this.element.cost.querySelectorAll('.expensive').length)?'fade buy-button':'buy-button';

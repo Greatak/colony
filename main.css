@@ -234,6 +234,14 @@ ul {
     text-shadow: 1px 1px 1px #000;
     width: calc(100% - 8rem);
 }
+h2>p {
+    float: right;
+    font-weight: 400;
+    margin: 0;
+    opacity: 0.8;
+    padding: 0 0.5rem;
+    text-shadow: none;
+}
 .building .cost,.technology .cost{
     display: inline-block;
     margin: 0.25em;
