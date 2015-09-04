@@ -18,11 +18,19 @@
 </HEAD>
 <BODY>
     <div class=main-container>
+        <div class=menu-container>
+            <h1>Menu</h1>
+            <h2>Data</h2>
+            <div class="save menu-button" onClick="Colony.save()">Save</div>
+            <div class="wipe-save menu-button" onClick="Colony.wipeSave()">Wipe Save</div>
+            <h2>Settings</h2>
+        </div>
         <div class=topbar>
-            <button class=top-tech-button onClick="Colony.wipeSave()">Wipe Save</button>
-            <div class=menu-button>Menu</div>
-            <div class=money-box>$money</div>
-            <div class=persecond>7</div>
+            <div class=menu-toggle>Menu</div>
+            <div class=money-container>
+                <div class=money-box>$money</div>
+                <div class=persecond>7</div 
+            </div>
             <div class=sexy-line></div>
         </div>
         <div class=gamespace>

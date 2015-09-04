@@ -13,10 +13,9 @@ var Colony = function(win,doc,undefined){
     //todo: ticker message for tech unlocks
     //todo: prestige/new planets
     //todo: manual click modifiers
-    //todo: menu
     //todo: building categories, invisible until tech
     //todo: pictures
-    o.version = 0.01;
+    o.version = 0.02;
     
 /*/////////////////////////////////////////////////////////
 INITIALIZATION
@@ -26,8 +25,10 @@ INITIALIZATION
     var $ = function(s){return doc.querySelectorAll(s);};
     
     //real sloppy like, let's just save all the elements I need
+    o.body = doc.body;
     o.tickerTape = $('.ticker')[0];
     o.moneyBar = $('.money-box')[0];
+    o.menuButton = $('.menu-toggle')[0];
     o.perSecond = $('.persecond')[0];
     o.planetSpace = $('.planetspace')[0];
     o.surveyButton = $('.survey-button')[0];
@@ -147,9 +148,9 @@ MONEY PRETTINESS
     function setPerSecond(){
         var m = 0;
         for(var i in o.builds){
-            m += o.builds[i].amount * o.builds[i].multiplier * o.builds[i].earn;
+            m += o.builds[i].amount * o.builds[i].multiplier * o.builds[i].earn * morale;
         }
-        o.perSecond.textContent = currencySign + prettify(m) + ' per second';
+        o.perSecond.textContent = '+ ' + prettify(m) + ' per second';
     }
     
 /*/////////////////////////////////////////////////////////
@@ -271,7 +272,8 @@ ECONOMY
     //todo: commodity market
     var cashMoney = 0,      //current funds
         allTimeMoney = 0,   //cummulative money
-        growthRate = 1.1;   //default building cost increase
+        growthRate = 1.1,   //default building cost increase
+        morale = 1;         //global efficiency multiplier
     
     //just setting the numbers and sanity checking
     function updateEconomy(dt){
@@ -350,6 +352,9 @@ ECONOMY
     }
     //add the click event
     o.planetSpace.addEventListener('click',surveyClick);
+    
+    var commodities = {'iron':1, 'aluminum':1, 'copper':1};
+    
 /*/////////////////////////////////////////////////////////
 BUILDINGS
 /////////////////////////////////////////////////////////*/
@@ -472,9 +477,17 @@ BUILDINGS
         
         //don't let there be less than 0 buildings
         this.amount = Math.max(0,this.amount);
-        //earn money in proportion to the multiplier and timestep since earnings are specified per second
-        //todo: event efficiency modification for stock market
-        earnMoney(this.earn * dt * this.multiplier * this.amount);
+        //earn money n stuff in proportion to the multiplier and timestep since earnings are specified per second
+        if(this.type && typeModifiers[this.type] != undefined){
+            //todo: commodity market
+            //market has price per second
+        }else{
+            earnMoney(this.earn * dt * this.multiplier * this.amount * morale);
+        }
+        if(this.morale) morale += this.morale * this.amount * dt;
+        if(this.harmony) harmony += this.harmony * this.amount * dt;
+        if(this.inpendence) independence += this.independence * this.amount * dt;
+        if(this.support) support += this.support * this.amount * dt;
     }
     //purchase the building, reused for technologies
     //if force then it doesn't cost anything
@@ -907,8 +920,9 @@ SAVE AND LOAD
         return true;
     }
     //hard-reset, just deletes the file
-    o.wipeSave = function(){
+    o.wipeSave = function(skip){
         localStorage.removeItem('colony-game');
+        if(!skip) location.reload();
     }
     //basically just load backwards, this is called in save()
     function writeSave(){
@@ -983,6 +997,11 @@ HELPER FUNCTIONS
         }
     }
     for(var i in o.modalButtons){ o.modalButtons[i].addEventListener('click',clickModal); }
+    
+    function menuToggle(){
+        o.body.classList.toggle('menu');
+    }
+    o.menuButton.addEventListener('click', menuToggle);
     
     //helper function for any animations, toggles the class after so long
     function classDelay(element,tag,delay){
