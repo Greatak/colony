@@ -1,0 +1,409 @@
+html{
+  height: 100%;
+}
+body{
+  background: #130912;
+  color: #fff;
+  font-family: "Ubuntu", sans-serif;
+  font-size: 16px;
+  height: 100%;
+  line-height: 1;
+  margin: 0;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 400;
+  margin: 0;
+}
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.left {
+  float: left;
+}
+.right {
+  float: right;
+}
+
+.panel-space {
+  height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
+  max-width: 40rem;
+}
+.panel {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  transform: translateX(100%);
+  transition: transform 0.3s;
+  width: 100%;
+}
+.panel.open.old {
+  transform: translateX(-100%);
+}
+.panel.open {
+  transform: translateX(0%);
+}
+
+.panel-header {
+  background: #602749;
+  height: 2em;
+  padding: 0.5em;
+  position: relative;
+}
+.header-title {
+  text-align: center;
+}
+.header-back {
+  cursor: pointer;
+}
+.header-back.hide {
+  display: none;
+}
+.header-back:before {
+  border-top: solid 2px #fff;
+  border-left: solid 2px #fff;
+  content: '';
+  height: 1em;
+  left: 1em;
+  position: absolute;
+  top: 1em;
+  transform: rotate(-45deg);
+  width: 1em;
+}
+.header-back p {
+  display: inline-block;
+  left: 2em;
+  position: absolute;
+  top: 0;
+}
+.search-box {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 0.5em;
+  pointer-events: none;
+  position:absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+}
+.search-box:after {
+  background: url('search.png');
+  background-size: cover;
+  content:'';
+  height: 1.5rem;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+  width: 1.5rem;
+}
+.search {
+  background: none;
+  border: none;
+  color: #fff;
+  float: right;
+  font-size: 1.4em;
+  height: 100%;
+  pointer-events: all;
+  text-align: center;
+  transition: width 0.3s;
+  width: 2.5rem;
+}
+.search:focus {
+  background: #3E1C33;
+  outline: none;
+  width: 100%;
+}
+.panel-content {
+  overflow: auto;
+}
+
+.desc {
+  margin: 0;
+  padding: 1em;
+  text-align: left;
+}
+
+.card {
+  background: #F6921D;
+  margin: 0.5em;
+  overflow: auto;
+  padding: 0.5em;
+}
+.card p {
+  margin: 0;
+  text-align: right;
+}
+
+.home-link {
+  background: #F6921D;
+  cursor: pointer;
+  margin: 0.5rem;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.res {
+  display: none;
+}
+.res.show {
+  display: block;
+}
+.res.card .res-amount {
+  border: none;
+  font-size: 1.1em;
+}
+
+.box {
+    position: relative;
+}
+input.toggle {
+  display: none;
+}
+label.toggle {
+  cursor: pointer;
+  display: inline-block;
+  height: 1em;
+  margin: 0 0.5em;
+  position: relative;
+  width: 1em;
+}
+label.toggle:before {
+    border-bottom: solid 2px #fff;
+    border-left: solid 2px #fff;
+    content: '';
+    height: 1em;
+    position: absolute;
+    top: -0.5em;
+    transform: rotate(-45deg);
+    width: 1em;
+}
+input.toggle + .card {
+  max-height: 2.5em;
+  overflow: hidden;
+}
+input.toggle:checked + .card {
+  max-height: 100em;
+}
+input.toggle:checked + .card label:before {
+  transform: scale(-1,-1) translateY(-0.5em) rotate(-45deg);
+}
+.ops.card {
+  background:#B14623;
+  padding: 0;
+}
+.ops-header {
+  background: #F6921D;
+  padding: 0.5em;
+}
+.ops-title {
+  display: inline-block;
+  font-size: 1.5em;
+  margin-left: 0.5rem;
+}
+.ops-amount {
+  display: inline-block;
+  float: right;
+  font-size: 1.5em;
+}
+.card .content {
+  padding: 0.5em;
+}
+
+.purchase {
+  display: flex;
+}
+.buy-button, .sell-button {
+  background: #F6921D;
+  flex-grow: 1;
+  font-size: 1.3em;
+  height: 1.5em;
+  position: relative;
+}
+.purchase>* + * {
+  border-left: solid 1px #fff;
+}
+.buy-button:before {
+  content:'Buy';
+  left: 0;
+  line-height: 1.5em;
+  position: absolute;
+  text-align: center;
+  top: 0;
+  width: 100%;
+}
+.sell-button:before {
+  content:'Sell';
+  left: 0;
+  line-height: 1.5em;
+  position: absolute;
+  text-align: center;
+  top: 0;
+  width: 100%;
+}
+
+.content h3, .panel-content h3 {
+  border-bottom: solid 1px #fff;
+  clear: both;
+  font-size: 1.5em;
+  margin: 0.5em 0;
+}
+.costs {
+  display: flex;
+  margin: 0 0 0.5em;
+  padding: 0 0.5em;
+}
+.cost, .use {
+  flex-grow: 1;
+}
+.cost-item + .cost-item, .use-item + .use-item {
+  padding: 0.25rem;
+}
+.head {
+  border-bottom: solid 1px #fff;
+  font-size: 1.1em;
+}
+.cost-item:nth-child(even), .use-item:nth-child(even) {
+  background: rgba(246, 146, 29, 0.4);
+}
+.cost-item label, .use-item label, .product label {
+  display: inline-block;
+  width: 50%;
+}
+.cost-item p, .use-item p, .product p {
+  display: inline-block;
+  width: 25%;
+}
+
+.slider {
+  margin: 0.5em 0;
+}
+.slider label {
+  font-size: 1.2em;
+}
+.slider p:before {
+  content:'Available: '
+}
+.slider .right {
+  width: 50%;
+}
+.slider-bar {
+  height: 1.2em;
+  width: 80%;
+}
+.slider-value {
+  font-size: 1.2em;
+  margin: 0 0.5rem;
+}
+
+.produce {
+  padding: 0 0.5em;
+}
+.product + .product {
+  padding: 0.25rem;
+}
+.product:nth-child(even) {
+  background: rgba(246, 146, 29, 0.4);
+}
+
+.tab {
+  box-sizing: border-box;
+  display: inline-block;
+  font-size: 1.3em;
+  padding: 0.5rem;
+  text-align: center;
+  width: 50%;
+}
+.tab.active {
+  background: #F6921D;
+}
+.improvements {
+  background: #F6921A;
+  display: none;
+}
+.improvements.active {
+  display: block;
+}
+.upgrade {
+  margin: 0.5em;
+  position: relative;
+}
+.upgrade .buy-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 20%;
+}
+
+.workforce .panel-content {
+  background: #B14623;
+  padding: 1em;
+}
+.hire-button {
+  background: #F6921A;
+  border: none;
+  display: inline-block;
+  font-size: 1.2em;
+  height: 3rem;
+  padding: 0.5rem;
+  position: relative;
+  width: 40%;
+}
+.hire-button:after {
+  color: #fff;
+  content: 'Hire';
+  left: 0;
+  line-height: 3rem;
+  position: absolute;
+  top: 0;
+  text-align: center;
+  width: 100%;
+}
+.hire-button.load {
+  pointer-events: none;
+}
+.hire-progress {
+  background: #602749;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  transition-duration: 2s;
+  transition-property: none;
+  transition-timing-function: linear;
+  top: 0;
+  width: 0%;
+}
+.load .hire-progress {
+  width: 100%;
+  transition-property: width;
+}
+.hire-select {
+  background: #602749;
+  border: none;
+  color: #fff;
+  font-size: 1.2em;
+  height: 3rem;
+  padding: 0 0.5em;
+  vertical-align: top;
+  width: 60%;
+}
+.staff-count {
+  padding: 0.25em 0.25em;
+}
+.alternate .staff-count:nth-child(odd) {
+  background: rgba(246, 146, 29, 0.4);
+}
+.staff-count label {
+  display: inline-block;
+  width: 60%;
+}
+.staff-count p {
+  display: inline-block;
+  margin: 0;
+  width: 40%;
+}

@@ -13,7 +13,7 @@ new Colony.Building({
     'cost':25,
     'earn':0.1,
     'unlocked':1,
-    'desc':"First wave of colonists, eager to discover what this world holds"
+    'desc':"Basic staff. They might have many different specializations, but you'll need them to do much of anything here."
 });
 new Colony.Building({
     'name':'survey',
@@ -59,9 +59,7 @@ new Colony.Building({
         'garden':1
     },
     'earn':100,
-    'desc':"Basic building blocks for agriculture require fertile soil and room to grow",
-    'onBuy':function(amt){ Colony.buildsByName['explorer'].offsetAmount += amt; },
-    'onSell':function(amt){ Colony.buildsByName['explorer'].offsetAmount -= amt; }
+    'desc':"Basic building blocks for agriculture require fertile soil and room to grow"
 });
 new Colony.Building({
     'name':'shaft',
@@ -81,8 +79,6 @@ new Colony.Building({
     'cost':100000,
     'earn':400,
     'desc':"If this colony is to thrive, we must set aside some resources for basic infrastructure and residential development",
-    'onBuy':function(amt){ Colony.buildsByName['explorer'].multiplier += amt * 0.05; },
-    'onSell':function(amt){ Colony.buildsByName['explorer'].offsetAmount -= amt * 0.05; }
 });
 new Colony.Building({
     'name':'reserve',
@@ -92,7 +88,7 @@ new Colony.Building({
     'otherCost':{
         'arable':1
     },
-    'earn':7500,
+    'earn':{'explorer':0.01},
     'desc':"Protecting the native wildlife will allow us useful research opportunities"
 });
 new Colony.Building({
@@ -102,7 +98,7 @@ new Colony.Building({
     'otherCost':{
         'arable':1
     },
-    'earn':150000,
+    'earn':{'explorer':0.05},
     'desc':"Imported crops will be more familiar to our colonists, but they require a carefully maintained climate"
 });
 new Colony.Building({
@@ -231,7 +227,7 @@ function Chance(event,n){
 }
 function AddEarn(what,amt){
     var r = Colony.buildsByName[what];
-    if(r && amt) return function(){ r.earn += amt; };
+    if(r && amt) return function(){ r.earn['money'] += amt; };
 }
 function AddMultiplier(what,amt){
     var r = Colony.buildsByName[what];
@@ -240,6 +236,10 @@ function AddMultiplier(what,amt){
 function GiveBuilding(what,amt){
     var r = Colony.buildsByName[what];
     if(r && amt) return function(){ r.buy(amt,1); }
+}
+function Name(what,name){
+    var r = Colony.buildsByName[what];
+    if(r && name) return function(){ r.displayName = name; r.element.title.textContent = name; }
 }
 
 //TECHNOLOGIES

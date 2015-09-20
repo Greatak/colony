@@ -10,7 +10,6 @@ var Colony = function(win,doc,undefined){
     //todo: morale consequences
     //todo: colonial policies
     //todo: lots of events
-    //todo: ticker message for tech unlocks
     //todo: prestige/new planets
     //todo: manual click modifiers
     //todo: building categories, invisible until tech
@@ -148,7 +147,8 @@ MONEY PRETTINESS
     function setPerSecond(){
         var m = 0;
         for(var i in o.builds){
-            m += o.builds[i].amount * o.builds[i].multiplier * o.builds[i].earn * morale;
+            if(!o.builds[i].earn['money']) continue;
+            m += o.builds[i].amount * o.builds[i].multiplier * o.builds[i].earn['money'] * morale;
         }
         o.perSecond.textContent = '+ ' + prettify(m) + ' per second';
     }
@@ -373,12 +373,17 @@ BUILDINGS
         this.growth = growthRate;   //how much more expensive is the next one?
         this.icon = [0,0];          //where's the picture?
         this.cost = 0;              //what's it cost?
-        this.earn = 0;              //how much does it make?
+        this.earn = {};              //how much does it make?
         this.multiplier = 1;        //Should we make the earnings bigger?
         this.desc = '';             //description of thing
+        this.partial = 0;           //partial unit
         
         //set all the things
         for(var i in obj){ this[i] = obj[i]; }
+        
+        if(typeof this.earn == 'number'){
+            this.earn = { 'money':this.earn };
+        }
         
         //starts out with the initial cost
         this.currentCost = this.cost;
@@ -470,7 +475,12 @@ BUILDINGS
         }
         this.element.cost.innerHTML = html;
         
-        this.element.earn.textContent = currencySign + prettify(this.earn * this.multiplier) + '/sec';
+        if(this.earn['money']){
+            this.element.earn.textContent = currencySign + prettify(this.earn['money'] * this.multiplier) + '/sec';
+        }else{
+            var t = Object.keys(this.earn)[0];
+            this.element.earn.textContent = prettify(this.earn[t] * this.multiplier) + ' ' + o.buildsByName[t].displayName + '/sec';
+        }
         
         //after we make the list, if anything is unaffordable, don't let the buy button get clicked
         this.element.buy.className = (this.element.cost.querySelectorAll('.expensive').length)?'fade buy-button':'buy-button';
@@ -482,7 +492,14 @@ BUILDINGS
             //todo: commodity market
             //market has price per second
         }else{
-            earnMoney(this.earn * dt * this.multiplier * this.amount * morale);
+            for(var i in this.earn){
+                if(i == 'money'){
+                    earnMoney(this.earn[i] * dt * this.multiplier * this.amount * morale);
+                }else{
+                    var b = o.buildsByName[i];
+                    b.buy(this.earn[i] * dt * this.multiplier * this.amount * morale);
+                }
+            }
         }
         if(this.morale) morale += this.morale * this.amount * dt;
         if(this.harmony) harmony += this.harmony * this.amount * dt;
@@ -493,6 +510,14 @@ BUILDINGS
     //if force then it doesn't cost anything
     o.Building.prototype.buy = function(amt,force){
         amt = amt || 0;
+        if(!Number.isInteger(amt)){
+            this.partial += amt;
+            amt = 0;
+        }
+        while(this.partial > 1){
+            amt++;
+            this.partial -= 1;
+        }
         //custom buy function? do it
         if(this.onBuy)this.onBuy(amt,force);
         //just do a loop for however many are getting purchased, so we can buy some of a big order
@@ -532,7 +557,7 @@ BUILDINGS
             this.currentCost = this.cost * Math.pow(this.growth,this.totalAmount-this.offsetAmount);
         }
         //fun++
-        if(this.element.amount){
+        if(amt && this.element.amount){
             this.element.amount.classList.add('bounce');
             classDelay(this.element.amount, 'bounce', 30);
         }
